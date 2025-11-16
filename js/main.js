@@ -64,7 +64,6 @@ handleSteamLogin();
 // 🔐 AUTH HANDLER — FIXED VERSION
 // ─────────────────────────────────────────
 auth.onAuthStateChanged(async user => {
-  // 🛑 BLOCK redirect while Steam login is still running
   if (!user) {
     if (window.__steamLoginInProgress) {
       console.log("⏳ Waiting for Steam login...");
@@ -76,7 +75,6 @@ auth.onAuthStateChanged(async user => {
 
   const isSteamUser = typeof user.uid === "string" && user.uid.startsWith("steam:");
 
-  // ❗ FIX: Email users must verify email — Steam users do NOT
   if (!isSteamUser && user.email && !user.emailVerified) {
     location.href = "index.html";
     return;
@@ -97,11 +95,16 @@ auth.onAuthStateChanged(async user => {
   if (userNameElement) userNameElement.textContent = name;
 
   // ─────────────────────────────────────────
-  // PROFILE LINK
+  // PROFILE LINK (FIXED)
   // ─────────────────────────────────────────
   const profileLink = document.getElementById("profileLink");
   if (profileLink) {
-    profileLink.href = `profile.html?id=${user.uid}`;
+    profileLink.href = "profile.html";
+  }
+
+  const profileLink2 = document.getElementById("profileLink2");
+  if (profileLink2) {
+    profileLink2.href = "profile.html";
   }
 
   // ─────────────────────────────────────────
@@ -129,18 +132,15 @@ auth.onAuthStateChanged(async user => {
       setInitialAvatar();
     }
 
-    // 👉 клик на аватарот → профил
     av.style.cursor = "pointer";
     av.onclick = () => {
-      location.href = `profile.html?id=${user.uid}`;
+      location.href = "profile.html";
     };
   }
 
   const isAdmin = userRole === "admin";
 
-  // ─────────────────────────────────────────
-  // MAINTENANCE PREVIEW (ADMIN ONLY)
-  // ─────────────────────────────────────────
+  // MAINTENANCE FOR ADMIN
   if (isPreview && isAdmin) {
     try {
       const maintDoc = await db.collection("config").doc("maintenance").get();
@@ -155,15 +155,11 @@ auth.onAuthStateChanged(async user => {
           <div class="note">Ќе се вратиме наскоро!</div>
         </div>
       `;
-    } catch {
-      // ignore
-    }
+    } catch {}
     return;
   }
 
-  // ─────────────────────────────────────────
   // MAINTENANCE FOR NORMAL USERS
-  // ─────────────────────────────────────────
   if (!isAdmin) {
     try {
       const maintDoc = await db.collection("config").doc("maintenance").get();
@@ -178,14 +174,10 @@ auth.onAuthStateChanged(async user => {
         `;
         return;
       }
-    } catch {
-      // ignore
-    }
+    } catch {}
   }
 
-  // ─────────────────────────────────────────
   // PANELS
-  // ─────────────────────────────────────────
   const adminPanel = document.getElementById("adminPanel");
   if (isAdmin && adminPanel) adminPanel.style.display = "block";
 
@@ -324,8 +316,6 @@ async function loadLiveMatches() {
 
         const match = matches[0];
 
-        // Ова реално е "последен меч", не вистински live,
-        // но останувам на твојата логика.
         if (!match.start_time || match.duration == null) continue;
 
         const hero = await getHeroName(match.hero_id);
