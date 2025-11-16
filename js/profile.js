@@ -1,23 +1,22 @@
-// ─────────────────────────────
-// 🔥 INIT (auth, db од firebase-config.js)
-// ─────────────────────────────
+/****************************************************
+ * PROFILE.JS — FIXED + OPTIMIZED + STEAM READY
+ ****************************************************/
 
 let currentUser = null;
 let viewingUserId = null;
 
-// ─────────────────────────────
-// 🧩 Земи ID од URL: profile.html?id=XXXXX
-// ─────────────────────────────
+/****************************************************
+ * GET PROFILE ID
+ ****************************************************/
 function getProfileId() {
     const params = new URLSearchParams(window.location.search);
     return params.get("id");
 }
 
-// ─────────────────────────────
-// 🚪 Провери дали е логирани (STEAM FIX JOINED)
-// ─────────────────────────────
+/****************************************************
+ * AUTH + STEAM USER FIX
+ ****************************************************/
 auth.onAuthStateChanged(async user => {
-
     const isSteamUser =
         user && typeof user.uid === "string" && user.uid.startsWith("steam:");
 
@@ -40,9 +39,9 @@ auth.onAuthStateChanged(async user => {
     await loadUserComments();
 });
 
-// ─────────────────────────────
-// 👤 LOAD PROFILE INFO
-// ─────────────────────────────
+/****************************************************
+ * LOAD PROFILE
+ ****************************************************/
 async function loadProfile() {
     const nameEl = document.getElementById("p_name");
     const avatarEl = document.getElementById("p_avatar");
@@ -69,27 +68,22 @@ async function loadProfile() {
         const country = escapeHtml(u.country || "Непознато");
 
         nameEl.textContent = username;
-
         roleEl.textContent = role.toUpperCase();
-
-        bannedEl.textContent = banned ? "DA (BANNED)" : "NE";
+        bannedEl.textContent = banned ? "ДА (BANNED)" : "НЕ";
         bannedEl.style.color = banned ? "#ef4444" : "#22c55e";
-
         createdEl.textContent = createdAt;
-
         countryEl.textContent = country;
 
         if (avatar) {
             avatarEl.style.backgroundImage = `url('${avatar}')`;
             avatarEl.textContent = "";
         } else {
+            avatarEl.style.background = `hsl(${username.charCodeAt(0) * 7 % 360},70%,55%)`;
             avatarEl.textContent = username.charAt(0).toUpperCase();
         }
 
-        // 🚀 Dota Profile Load
-        if (u.steamId) {
-            loadDotaProfile(u.steamId);
-        }
+        // Load DOTA
+        if (u.steamId) loadDotaProfile(u.steamId);
 
     } catch (err) {
         console.error(err);
@@ -97,9 +91,9 @@ async function loadProfile() {
     }
 }
 
-// ─────────────────────────────
-// 🧵 LOAD USER THREADS
-// ─────────────────────────────
+/****************************************************
+ * LOAD USER THREADS
+ ****************************************************/
 async function loadUserThreads() {
     const out = document.getElementById("userThreads");
     const countEl = document.getElementById("threadCountProfile");
@@ -125,13 +119,11 @@ async function loadUserThreads() {
             const t = doc.data();
             const title = escapeHtml(t.title || "Без наслов");
 
-            const html = `
+            out.insertAdjacentHTML("beforeend", `
                 <div class="item">
                     <a href="thread.html?id=${doc.id}" class="item-title">${title}</a>
                 </div>
-            `;
-
-            out.insertAdjacentHTML("beforeend", html);
+            `);
         });
 
     } catch (err) {
@@ -140,9 +132,9 @@ async function loadUserThreads() {
     }
 }
 
-// ─────────────────────────────
-// 💬 LOAD USER COMMENTS
-// ─────────────────────────────
+/****************************************************
+ * LOAD USER COMMENTS
+ ****************************************************/
 async function loadUserComments() {
     const out = document.getElementById("userComments");
     const countEl = document.getElementById("commentCountProfile");
@@ -152,8 +144,8 @@ async function loadUserComments() {
     try {
         const threads = await db.collection("threads").get();
 
-        let totalComments = 0;
-        let results = [];
+        let total = 0;
+        let list = [];
 
         for (const t of threads.docs) {
             const comments = await t.ref
@@ -162,36 +154,34 @@ async function loadUserComments() {
                 .get();
 
             comments.forEach(c => {
-                totalComments++;
-
                 const text = escapeHtml(c.data().text || "");
-                results.push({
+
+                list.push({
                     threadId: t.id,
-                    threadTitle: escapeHtml(t.data().title || "Без наслов"),
+                    title: escapeHtml(t.data().title || "Без наслов"),
                     text
                 });
+
+                total++;
             });
         }
 
-        countEl.textContent = totalComments;
+        countEl.textContent = total;
 
-        if (totalComments === 0) {
+        if (total === 0) {
             out.innerHTML = `<p class="empty">Нема коментари.</p>`;
             return;
         }
 
         out.innerHTML = "";
 
-        results.forEach(r => {
-            const html = `
+        list.forEach(r => {
+            out.insertAdjacentHTML("beforeend", `
                 <div class="comment-item">
-                    <a class="cm-thread" href="thread.html?id=${r.threadId}">
-                        ${r.threadTitle}
-                    </a>
+                    <a href="thread.html?id=${r.threadId}" class="cm-thread">${r.title}</a>
                     <div class="cm-text">${convertLinks(r.text)}</div>
                 </div>
-            `;
-            out.insertAdjacentHTML("beforeend", html);
+            `);
         });
 
     } catch (err) {
@@ -200,25 +190,18 @@ async function loadUserComments() {
     }
 }
 
-// ─────────────────────────────
-// 🔥 LOAD DOTA PROFILE
-// ─────────────────────────────
+/****************************************************
+ * DOTA PROFILE (USING YOUR BACKEND)
+ ****************************************************/
 function rankNameFromTier(rankTier) {
     if (!rankTier) return "Unranked";
-
     const main = Math.floor(rankTier / 10);
-
-    switch (main) {
-        case 1: return "Herald";
-        case 2: return "Guardian";
-        case 3: return "Crusader";
-        case 4: return "Archon";
-        case 5: return "Legend";
-        case 6: return "Ancient";
-        case 7: return "Divine";
-        case 8: return "Immortal";
-        default: return "Unranked";
-    }
+    return [
+        "",
+        "Herald", "Guardian", "Crusader",
+        "Archon", "Legend", "Ancient",
+        "Divine", "Immortal"
+    ][main] || "Unranked";
 }
 
 async function loadDotaProfile(steamId) {
@@ -230,38 +213,37 @@ async function loadDotaProfile(steamId) {
         const data = await res.json();
 
         if (!data.success) {
-            out.innerHTML = "<p class='error'>Нема Dota податоци за овој корисник.</p>";
+            out.innerHTML = "<p class='error'>Нема Dota податоци.</p>";
             return;
         }
 
         const p = data.basic;
         const ranks = data.ranks;
         const stats = data.stats;
-        const matches = data.recentMatches;
+        const matches = data.recentMatches || [];
 
         const rankTier = ranks.rankTier || 0;
-        const rankMain = Math.floor(rankTier / 10);
-        const rankStar = rankTier % 10;
+        const main = Math.floor(rankTier / 10);
+        const star = rankTier % 10;
+
         const rankIcon = rankTier
-            ? `https://www.opendota.com/assets/images/dota2/rank_icons/rank_icon_${rankMain}_${rankStar}.png`
+            ? `https://www.opendota.com/assets/images/dota2/rank_icons/rank_icon_${main}_${star}.png`
             : "";
-        const rankName = rankNameFromTier(rankTier);
 
         out.innerHTML = `
             <div class="dota-header">
-                <img src="${p.avatar}" class="dota-avatar" />
+                <img src="${p.avatar}" class="dota-avatar">
                 <div class="dota-info-block">
                     <h2>${p.name}</h2>
-                    <a href="${p.profileUrl}" class="dota-link" target="_blank">Steam Profile</a>
+                    <a href="${p.profileUrl}" target="_blank" class="dota-link">Steam Profile</a>
                 </div>
             </div>
 
             <div class="dota-grid">
                 <div class="dota-card">
                     <h3>Rank</h3>
-                    ${rankIcon ? `<img src="${rankIcon}" class="dota-rank" />` : "Unranked"}
-                    <p>${rankName}</p>
-                    ${ranks.leaderboardRank ? `<p>Leaderboard #${ranks.leaderboardRank}</p>` : ""}
+                    ${rankIcon ? `<img src="${rankIcon}" class="dota-rank">` : "Unranked"}
+                    <p>${rankNameFromTier(rankTier)}</p>
                 </div>
 
                 <div class="dota-card">
@@ -271,7 +253,7 @@ async function loadDotaProfile(steamId) {
                 </div>
 
                 <div class="dota-card">
-                    <h3>Statistics</h3>
+                    <h3>Stats</h3>
                     <p>Wins: ${stats.wins}</p>
                     <p>Losses: ${stats.losses}</p>
                     <p>Winrate: ${stats.winrate.toFixed(2)}%</p>
@@ -280,11 +262,11 @@ async function loadDotaProfile(steamId) {
 
             <h3 class="recent-title">Recent Matches</h3>
             <div class="recent-matches">
-                ${matches.slice(0, 10).map(m => `
+                ${matches.slice(0,10).map(m => `
                     <div class="match-row">
                         <span>Hero ID: ${m.hero_id}</span>
                         <span>KDA: ${m.kills}/${m.deaths}/${m.assists}</span>
-                        <span>${(m.duration / 60).toFixed(0)} мин</span>
+                        <span>${(m.duration/60).toFixed(0)} мин</span>
                         <a href="https://www.dotabuff.com/matches/${m.match_id}" target="_blank">View</a>
                     </div>
                 `).join("")}
@@ -296,18 +278,15 @@ async function loadDotaProfile(steamId) {
     }
 }
 
-// ─────────────────────────────
-// 🛡 ESCAPE HTML
-// ─────────────────────────────
+/****************************************************
+ * ESCAPE + LINKIFY
+ ****************************************************/
 function escapeHtml(t) {
     const d = document.createElement("div");
     d.textContent = t;
     return d.innerHTML;
 }
 
-// ─────────────────────────────
-// 🔗 Конвертирај линкови
-// ─────────────────────────────
 function convertLinks(text) {
     return text.replace(
         /(https?:\/\/[^\s]+)/g,
