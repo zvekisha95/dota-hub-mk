@@ -1,6 +1,173 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+    <meta charset="UTF-8">
+    <title>Форум – Zvekisha Dota Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- BLIZZARD FONT -->
+    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            background: url("https://i.imgur.com/g9z3w2R.jpeg") center/cover fixed; /* Blizzard BG */
+            font-family: 'Oxanium', system-ui, sans-serif;
+            color: #dbeafe;
+        }
+
+        .container {
+            max-width: 950px;
+            margin: 50px auto;
+            background: rgba(3, 13, 33, 0.85);
+            padding: 25px 35px;
+            border-radius: 16px;
+            border: 1px solid rgba(96, 165, 250, 0.35);
+            box-shadow: 0 0 25px rgba(96,165,250,0.22), inset 0 0 10px rgba(59,130,246,0.2);
+            backdrop-filter: blur(8px);
+        }
+
+        h1 {
+            text-align: center;
+            color: #60a5fa;
+            font-size: 2.3rem;
+            text-shadow: 0 0 12px rgba(96,165,250,0.8);
+            margin-bottom: 25px;
+        }
+
+        /* NEW THREAD BUTTON (Blizzard style) */
+        #newThreadBtn {
+            display: block;
+            width: 240px;
+            margin: 0 auto 22px auto;
+            padding: 10px 15px;
+            background: linear-gradient(180deg, #3b82f6, #1e40af);
+            color: #e0f2fe;
+            font-weight: bold;
+            text-align: center;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 1.1rem;
+            box-shadow: 0 0 10px rgba(96,165,250,0.6);
+            border: 1px solid rgba(147,197,253,0.35);
+            transition: 0.2s;
+        }
+
+        #newThreadBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(96,165,250,0.9);
+        }
+
+        /* THREAD CARD */
+        .thread-card {
+            padding: 18px;
+            border-radius: 14px;
+            margin-bottom: 18px;
+            background: rgba(15, 23, 42, 0.72);
+            border: 1px solid rgba(147,197,253,0.28);
+            box-shadow: 0 0 12px rgba(59,130,246,0.25);
+            transition: 0.25s;
+        }
+
+        .thread-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 0 18px rgba(96,165,250,0.55);
+        }
+
+        .thread-title {
+            color: #93c5fd;
+            font-weight: bold;
+            font-size: 1.25rem;
+            text-decoration: none;
+            text-shadow: 0 0 8px rgba(96,165,250,0.6);
+        }
+
+        .thread-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            color: #9ca3af;
+            font-size: 0.95rem;
+        }
+
+        .author {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #334155;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #e2e8f0;
+            background-size: cover;
+            background-position: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border: 1px solid rgba(147,197,253,0.4);
+            box-shadow: 0 0 10px rgba(59,130,246,0.45);
+        }
+
+        .btn-delete {
+            margin-top: 12px;
+            padding: 6px 10px;
+            background: #dc2626;
+            border: 1px solid #7f1d1d;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .btn-delete:hover {
+            background: #ef4444;
+            box-shadow: 0 0 12px rgba(239,68,68,0.6);
+        }
+
+        .loading { color: #60a5fa; }
+        .empty   { color: #9ca3af; font-style: italic; }
+        .error   { color: #f87171; font-weight: bold; }
+
+        a.back {
+            display: inline-block;
+            margin-top: 25px;
+            color: #93c5fd;
+            text-decoration: none;
+            font-weight: bold;
+            text-shadow: 0 0 6px rgba(96,165,250,0.4);
+        }
+
+        a.back:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <h1>Форум</h1>
+
+    <a id="newThreadBtn" href="new-thread.html">+ Нова тема</a>
+
+    <div id="threadList"></div>
+
+    <a class="back" href="main.html">⟵ Назад</a>
+</div>
+
+<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
 <script src="js/firebase-config.js"></script>
 <script src="js/forum.js"></script>
+
+</body>
+</html>
