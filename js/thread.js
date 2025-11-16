@@ -1,304 +1,81 @@
-// ─────────────────────────────
-// 🔥 INIT
-// ─────────────────────────────
-let currentUser = null;
-let userRole = "member";
-let threadId = null;
-let threadLocked = false;
+const url = new URL(window.location.href);
+const threadId = url.searchParams.get("id");
 
-// ─────────────────────────────
-// 🧩 GET THREAD ID
-// ─────────────────────────────
-function getThreadId() {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("id");
+if (!threadId) {
+    document.body.innerHTML = "<h1>Грешка: Нема ID.</h1>";
 }
 
-// ─────────────────────────────
-// ⛔ LOGIN + STEAM FIX
-// ─────────────────────────────
 auth.onAuthStateChanged(async user => {
+    if (!user) location.href = "index.html";
 
-    if (!user) {
-        location.href = "index.html";
-        return;
-    }
-
-    const provider = user.providerData[0]?.providerId || "custom";
-    const isSteam = provider === "custom" || user.uid.startsWith("steam:");
-
-    if (!isSteam && !user.emailVerified) {
-        alert("Прво потврди го email-от.");
-        location.href = "index.html";
-        return;
-    }
-
-    currentUser = user;
-
-    const doc = await db.collection("users").doc(user.uid).get();
-    const data = doc.exists ? doc.data() : {};
-    userRole = data.role || "member";
-
-    threadId = getThreadId();
-    if (!threadId) {
-        alert("Недостасува ID на темата.");
-        location.href = "forum.html";
-        return;
-    }
-
-    await loadThread();
-    await loadComments();
+    loadThread();
+    loadComments();
 });
 
-// ─────────────────────────────
-// 📌 LOAD THREAD
-// ─────────────────────────────
+
 async function loadThread() {
     const doc = await db.collection("threads").doc(threadId).get();
-
-    const titleEl = document.getElementById("threadTitle");
-    const bodyEl = document.getElementById("threadBody");
-    const authorEl = document.getElementById("threadAuthor");
-    const timeEl = document.getElementById("threadTime");
-    const avatarEl = document.getElementById("threadAvatar");
-    const lockedEl = document.getElementById("lockedBanner");
-
     if (!doc.exists) {
-        if (titleEl) titleEl.textContent = "Тема не постои.";
+        document.getElementById("threadTitle").textContent = "Темата не постои.";
         return;
     }
 
     const t = doc.data();
 
-    threadLocked = t.locked === true;
-    if (threadLocked && lockedEl) lockedEl.style.display = "block";
-
-    const authorName = escapeHtml(
-        t.author || t.authorName || t.username || "Непознат"
-    );
-
-    if (titleEl) titleEl.textContent = escapeHtml(t.title || "Без наслов");
-    if (bodyEl) bodyEl.innerHTML = convertLinks(escapeHtml(t.body || ""));
-    if (authorEl) authorEl.textContent = authorName;
-    if (timeEl) timeEl.textContent = t.createdAt?.toDate?.().toLocaleString("mk-MK") || "??";
-
-    if (avatarEl) {
-        if (t.avatarUrl) {
-            avatarEl.style.backgroundImage = `url('${t.avatarUrl}')`;
-            avatarEl.style.backgroundSize = "cover";
-            avatarEl.style.backgroundPosition = "center";
-            avatarEl.textContent = "";
-        } else {
-            avatarEl.style.background = `hsl(${authorName.charCodeAt(0) * 8 % 360},70%,55%)`;
-            avatarEl.textContent = authorName.charAt(0).toUpperCase();
-        }
-    }
+    document.getElementById("threadTitle").textContent = t.title;
+    document.getElementById("threadContent").innerHTML = t.content;
 }
 
-// ─────────────────────────────
-// 💬 LOAD COMMENTS
-// ─────────────────────────────
+
 async function loadComments() {
-    const list = document.getElementById("commentList");
-    if (!list) return;
+    const list = document.getElementById("comments");
+    list.innerHTML = "Вчитувам...";
 
-    list.innerHTML = `<div class="loading">Вчитувам...</div>`;
+    const snap = await db.collection("threads")
+        .doc(threadId)
+        .collection("comments")
+        .orderBy("createdAt", "asc")
+        .get();
 
-    try {
-        const snap = await db.collection("threads")
-            .doc(threadId)
-            .collection("comments")
-            .orderBy("createdAt")
-            .get();
-
-        if (snap.empty) {
-            list.innerHTML = `<p class="empty">Нема коментари. Биди првиот!</p>`;
-            return;
-        }
-
-        list.innerHTML = "";
-
-        snap.forEach(doc => {
-            const c = doc.data();
-            const id = doc.id;
-
-            const authorName = escapeHtml(c.author || c.authorName || "???");
-            const text = escapeHtml(c.text || "");
-            const avatar = c.avatarUrl || "";
-            const time = c.createdAt?.toDate?.().toLocaleString("mk-MK") || "??";
-
-            const isAuthor = currentUser.uid === c.authorId;
-            const isMod = userRole === "admin" || userRole === "moderator";
-
-            const html = `
-                <div class="comment">
-                    <div class="c-avatar"
-                        style="${avatar ? `background-image:url('${avatar}')` : ""}">
-                        ${!avatar ? authorName.charAt(0).toUpperCase() : ""}
-                    </div>
-
-                    <div class="c-body">
-                        <div class="c-header">
-                            <span class="c-author">${authorName}</span>
-                            <span class="c-time">${time}</span>
-                        </div>
-
-                        <div class="c-text">${convertLinks(text)}</div>
-
-                        <div class="c-actions">
-                            <button class="flag-btn" onclick="flagComment('${id}')">🚩 Пријави</button>
-
-                            ${(!threadLocked && isAuthor) ? `
-                                <button class="edit-btn" onclick="editComment('${id}', '${escapeJs(text)}')">Уреди</button>
-                                <button class="del-btn" onclick="deleteComment('${id}')">Избриши</button>
-                            ` : ""}
-
-                            ${(isMod && !isAuthor) ? `
-                                <button class="mod-del" onclick="deleteComment('${id}')">MOD Delete</button>
-                            ` : ""}
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            list.insertAdjacentHTML("beforeend", html);
-        });
-
-    } catch (err) {
-        console.error(err);
-        list.innerHTML = `<p class="error">Грешка при вчитување коментари.</p>`;
-    }
-}
-
-// ─────────────────────────────
-// ➕ ADD COMMENT
-// ─────────────────────────────
-async function addComment() {
-    if (threadLocked) {
-        alert("Темата е заклучена. Не можеш да коментираш.");
+    if (snap.empty) {
+        list.innerHTML = "<i>Нема коментари.</i>";
         return;
     }
 
-    const input = document.getElementById("commentInput");
-    const text = input.value.trim();
+    list.innerHTML = "";
 
-    if (!text) return alert("Внеси коментар.");
+    snap.forEach(doc => {
+        const c = doc.data();
+        const html = `
+            <div class="comment">
+                <strong>${c.author}</strong><br>
+                ${c.text}<br>
+                <small>${c.createdAt.toDate().toLocaleString("mk-MK")}</small>
+            </div>
+        `;
+        list.insertAdjacentHTML("beforeend", html);
+    });
+}
 
-    const userDoc = await db.collection("users").doc(currentUser.uid).get();
+
+async function postComment() {
+    const text = document.getElementById("commentInput").value.trim();
+    if (!text) return alert("Празен коментар");
+
+    const user = auth.currentUser;
+    const userDoc = await db.collection("users").doc(user.uid).get();
     const u = userDoc.data();
 
-    try {
-        await db.collection("threads")
-            .doc(threadId)
-            .collection("comments")
-            .add({
-                text: text,
-                author: u.username || currentUser.email,
-                authorId: currentUser.uid,
-                role: u.role || "member",        // ✔ FIX (required by your rules)
-                avatarUrl: u.avatarUrl || "",
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                flagged: false,
-                flaggedBy: []
-            });
+    await db.collection("threads")
+        .doc(threadId)
+        .collection("comments")
+        .add({
+            author: u.username || "Корисник",
+            userId: user.uid,
+            text,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
-        input.value = "";
-        loadComments();
-
-    } catch (err) {
-        console.error(err);
-        alert("Грешка при коментирање.");
-    }
+    document.getElementById("commentInput").value = "";
+    loadComments();
 }
-
-// ─────────────────────────────
-// 🚩 FLAG COMMENT
-// ─────────────────────────────
-async function flagComment(id) {
-    try {
-        await db.collection("threads")
-            .doc(threadId)
-            .collection("comments")
-            .doc(id)
-            .update({
-                flagged: true,
-                flaggedBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-            });
-
-        alert("Коментарот е пријавен.");
-    } catch {
-        alert("Грешка.");
-    }
-}
-
-// ─────────────────────────────
-// ✏️ EDIT COMMENT
-// ─────────────────────────────
-async function editComment(id, oldText) {
-    const newText = prompt("Уреди го коментарот:", oldText);
-    if (!newText) return;
-
-    try {
-        await db.collection("threads")
-            .doc(threadId)
-            .collection("comments")
-            .doc(id)
-            .update({
-                text: newText
-            });
-
-        loadComments();
-    } catch {
-        alert("Грешка.");
-    }
-}
-
-// ─────────────────────────────
-// ❌ DELETE COMMENT
-// ─────────────────────────────
-async function deleteComment(id) {
-    if (!confirm("Дали сигурно сакаш да избришеш коментар?")) return;
-
-    try {
-        await db.collection("threads")
-            .doc(threadId)
-            .collection("comments")
-            .doc(id)
-            .delete();
-
-        loadComments();
-    } catch (err) {
-        console.error(err);
-        alert("Грешка при бришење.");
-    }
-}
-
-// ─────────────────────────────
-// 🛡 ESCAPE HTML
-// ─────────────────────────────
-function escapeHtml(t) {
-    const d = document.createElement("div");
-    d.textContent = t;
-    return d.innerHTML;
-}
-
-// ─────────────────────────────
-// 🛡 ESCAPE JS FOR PROMPT()
-// ─────────────────────────────
-function escapeJs(t) {
-    return t
-        .replace(/\\/g,"\\\\")
-        .replace(/"/g,'\\"')
-        .replace(/'/g,"\\'");
-}
-
-// ─────────────────────────────
-// 🔗 MAP LINKS
-// ─────────────────────────────
-function convertLinks(text) {
-    return text.replace(
-        /(https?:\/\/[^\s]+)/g,
-        '<a href="$1" target="_blank">$1</a>'
-    );
-}
-
