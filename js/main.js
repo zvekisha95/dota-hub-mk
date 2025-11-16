@@ -15,7 +15,7 @@ if (isPreview) {
 }
 
 // ─────────────────────────────
-// 🎟️ STEAM LOGIN TOKEN HANDLER
+// 🎟️ STEAM LOGIN TOKEN HANDLER (ФИКСИРАНО!)
 // ─────────────────────────────
 async function handleSteamLogin() {
   const url = new URL(window.location.href);
@@ -26,28 +26,12 @@ async function handleSteamLogin() {
   console.log("Steam token detected:", steamToken);
 
   try {
-    // 👇 Испрати го токенот до backend
-    const res = await fetch("/api/steam-complete?token=" + steamToken);
-    const data = await res.json();
-
-    if (!data.success) {
-      console.error("Steam login failed:", data.error);
-      alert("Steam login failed: " + data.error);
-      return;
-    }
-
-    const fbToken = data.firebaseToken;
-
-    // 👇 Firebase Custom Auth login
-    const userCred = await auth.signInWithCustomToken(fbToken);
+    // 🟢 Директно логирање преку Firebase Custom Token
+    const userCred = await auth.signInWithCustomToken(steamToken);
     const user = userCred.user;
 
-    // 🔥 Запиши/ажурирај профил
+    // 🔥 Update Firestore online статус
     await db.collection("users").doc(user.uid).set({
-      username: data.username,
-      steamId: data.steamId,
-      avatarUrl: data.avatar,
-      role: data.role || "member",
       online: true,
       lastSeen: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
@@ -56,7 +40,7 @@ async function handleSteamLogin() {
     url.searchParams.delete("steamToken");
     window.history.replaceState({}, document.title, url.toString());
 
-    // ➡️ Напред!
+    // ➡️ Влези на главната страна
     location.href = "main.html";
 
   } catch (err) {
@@ -68,32 +52,27 @@ async function handleSteamLogin() {
 // Активирај веднаш
 handleSteamLogin();
 
-
 // ─────────────────────────────
 // 🔐 AUTH & USER LOAD
 // ─────────────────────────────
 auth.onAuthStateChanged(async user => {
-  if (!user || !user.emailVerified) {
+  if (!user) {
     location.href = "index.html";
     return;
   }
 
   currentUser = user;
 
-  // FIRESTORE DATA
   const userDoc = await db.collection("users").doc(user.uid).get();
   const u = userDoc.exists ? userDoc.data() : {};
   userRole = u.role || "member";
 
-  const name = u.username || user.email.split("@")[0];
+  const name = u.username || user.email?.split("@")[0] || "Корисник";
   document.getElementById("userName").textContent = name;
 
-  const isAdmin = userRole === "admin";
-
-  // ─────────────────────────────
-  // 🖼️ АВАТАР
-  // ─────────────────────────────
   const av = document.getElementById("userAvatar");
+
+  // Аватар
   if (av) {
     if (u.avatarUrl) {
       const img = new Image();
@@ -111,13 +90,12 @@ auth.onAuthStateChanged(async user => {
     }
   }
 
-  // Профил линк
   const profileLink = document.getElementById("profileLink");
   if (profileLink) profileLink.href = `profile.html?id=${user.uid}`;
 
-  // ─────────────────────────────
-  // 🛠️ PREVIEW MODE за админ
-  // ─────────────────────────────
+  const isAdmin = userRole === "admin";
+
+  // MAINTENANCE PREVIEW (ADMIN)
   if (isPreview && isAdmin) {
     try {
       const maintDoc = await db.collection("config").doc("maintenance").get();
@@ -136,9 +114,7 @@ auth.onAuthStateChanged(async user => {
     return;
   }
 
-  // ─────────────────────────────
-  // 🔒 MAINTENANCE за member/mod
-  // ─────────────────────────────
+  // MAINTENANCE за members
   if (!isAdmin) {
     try {
       const maintDoc = await db.collection("config").doc("maintenance").get();
@@ -156,9 +132,7 @@ auth.onAuthStateChanged(async user => {
     } catch {}
   }
 
-  // ─────────────────────────────
-  // 👑 Панели
-  // ─────────────────────────────
+  // PANELS
   if (userRole === "admin") {
     document.getElementById("adminPanel").style.display = "block";
   }
@@ -166,9 +140,7 @@ auth.onAuthStateChanged(async user => {
     document.getElementById("modPanel").style.display = "block";
   }
 
-  // ─────────────────────────────
-  // 🟢 ONLINE status
-  // ─────────────────────────────
+  // ONLINE STATUS
   await db.collection("users").doc(user.uid).set({
     online: true,
     lastSeen: firebase.firestore.FieldValue.serverTimestamp()
@@ -213,9 +185,8 @@ auth.onAuthStateChanged(async user => {
   window.addEventListener("beforeunload", setOffline);
 });
 
-
 // ─────────────────────────────
-// 📊 STATISTIKA
+// 📊 STATISTICS
 // ─────────────────────────────
 async function loadStats() {
   try {
@@ -236,7 +207,6 @@ async function loadStats() {
     console.error("СТАТИСТИКА ERROR:", err);
   }
 }
-
 
 // ─────────────────────────────
 // 🎮 LIVE MATCHES
@@ -260,13 +230,11 @@ async function loadLiveMatches() {
       const steamId = data.steamId;
       const username = data.username || "Играч";
 
-      // Кеш
       if (liveCache[steamId] && (now - liveCache[steamId].time) < CACHE_TIME) {
         if (liveCache[steamId].html) results.push(liveCache[steamId].html);
         continue;
       }
 
-      // Rate-limit
       const timeSinceLast = now - lastRequestTime;
       if (timeSinceLast < MIN_DELAY) {
         await new Promise(r => setTimeout(r, MIN_DELAY - timeSinceLast));
@@ -331,7 +299,6 @@ async function getHeroName(heroId) {
   }
 }
 
-
 // ─────────────────────────────
 // ⏰ Време + Држава (IP)
 // ─────────────────────────────
@@ -353,7 +320,8 @@ function updateTimeAndCountry() {
   if (cached && cacheTime && (nowTime - cacheTime < 300000)) {
     const data = JSON.parse(cached);
     document.getElementById("userCountry").textContent = data.code;
-    document.getElementById("countryFlag").src = `https://flagcdn.com/16x12/${data.code.toLowerCase()}.png`;
+    document.getElementById("countryFlag").src =
+      `https://flagcdn.com/16x12/${data.code.toLowerCase()}.png`;
     document.getElementById("countryName").textContent = data.name;
     return;
   }
@@ -367,7 +335,8 @@ function updateTimeAndCountry() {
       };
 
       document.getElementById("userCountry").textContent = countryData.code;
-      document.getElementById("countryFlag").src = `https://flagcdn.com/16x12/${countryData.code.toLowerCase()}.png`;
+      document.getElementById("countryFlag").src =
+        `https://flagcdn.com/16x12/${countryData.code.toLowerCase()}.png`;
       document.getElementById("countryName").textContent = countryData.name;
 
       localStorage.setItem("countryData", JSON.stringify(countryData));
