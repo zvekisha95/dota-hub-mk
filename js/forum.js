@@ -7,17 +7,27 @@ let currentUser = null;
 let userRole = "member";
 
 // ─────────────────────────────
-// ⛔ REDIRECT ако не си логирани
+// ⛔ LOGIN + STEAM FIX
 // ─────────────────────────────
 auth.onAuthStateChanged(async user => {
-    if (!user || !user.emailVerified) {
+    if (!user) {
+        location.href = "index.html";
+        return;
+    }
+
+    // Steam users = provider = custom
+    const provider = user.providerData[0]?.providerId || "custom";
+
+    // Email/password users must verify
+    if (provider === "password" && !user.emailVerified) {
+        alert("Мораш да ја верификуваш емаил адресата.");
         location.href = "index.html";
         return;
     }
 
     currentUser = user;
 
-    // Вчитај податоци од Firestore
+    // Load Firestore profile
     const doc = await db.collection("users").doc(user.uid).get();
     const data = doc.exists ? doc.data() : {};
 
@@ -27,7 +37,7 @@ auth.onAuthStateChanged(async user => {
 });
 
 // ─────────────────────────────
-// 📌 LOAD THREADS
+// 📌 LOAD THREADS LIST
 // ─────────────────────────────
 async function loadThreads() {
     const list = document.getElementById("threadList");
@@ -49,28 +59,36 @@ async function loadThreads() {
             const thread = doc.data();
             const id = doc.id;
 
-            const title = escapeHtml(thread.title || "Без наслов");
-            const author = escapeHtml(thread.author || "Непознат");
+            // Resolve author fields
+            const authorName =
+                escapeHtml(thread.author ||
+                           thread.authorName ||
+                           thread.username ||
+                           "Непознат");
+
             const avatar = thread.avatarUrl || "";
             const time = thread.createdAt?.toDate?.().toLocaleString("mk-MK") || "??";
             const comments = await getCommentCount(id);
 
-            // MOD/ADMIN алатки?
+            // Can this user moderate?
             const canModerate = userRole === "admin" || userRole === "moderator";
 
             const html = `
                 <div class="thread-card">
+
                     <div class="thread-header">
-                        <a href="thread.html?id=${id}" class="thread-title">${title}</a>
+                        <a href="thread.html?id=${id}" class="thread-title">
+                            ${escapeHtml(thread.title || "Без наслов")}
+                        </a>
                     </div>
 
                     <div class="thread-info">
                         <div class="author">
                             <div class="avatar"
                                  style="${avatar ? `background-image:url('${avatar}')` : ""}">
-                                ${!avatar ? author.charAt(0).toUpperCase() : ""}
+                                ${!avatar ? authorName.charAt(0).toUpperCase() : ""}
                             </div>
-                            <span>${author}</span>
+                            <span>${authorName}</span>
                         </div>
 
                         <div class="meta">
@@ -97,7 +115,7 @@ async function loadThreads() {
 }
 
 // ─────────────────────────────
-// 💬 БРОЈАЧ НА КОМЕНТАРИ
+// 💬 COUNT COMMENTS
 // ─────────────────────────────
 async function getCommentCount(threadId) {
     try {
@@ -112,7 +130,7 @@ async function getCommentCount(threadId) {
 }
 
 // ─────────────────────────────
-// ❌ DELETE THREAD (MOD/ADMIN)
+// ❌ DELETE THREAD (ADMIN/MOD)
 // ─────────────────────────────
 async function deleteThread(id) {
     if (!confirm("Дали сигурно сакаш да ја избришеш темата?"))
@@ -120,7 +138,7 @@ async function deleteThread(id) {
 
     try {
         await db.collection("threads").doc(id).delete();
-        alert("Тема е избришана.");
+        alert("Темата е избришана.");
         loadThreads();
     } catch (err) {
         console.error(err);
@@ -129,7 +147,7 @@ async function deleteThread(id) {
 }
 
 // ─────────────────────────────
-// 🛡️ SANITIZE HTML
+// 🛡️ SAFE HTML
 // ─────────────────────────────
 function escapeHtml(text) {
     const div = document.createElement("div");
