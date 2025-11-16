@@ -1,28 +1,27 @@
 let currentUser = null;
 let userRole = "member";
 
-// 👉 Escape HTML
+// Escape HTML
 function escapeHtml(t) {
   const d = document.createElement("div");
   d.textContent = t;
   return d.innerHTML;
 }
 
-// ➕ PREVIEW MODE
+// Preview mode
 const isPreview = localStorage.getItem("maintenancePreview") === "true";
 if (isPreview) localStorage.removeItem("maintenancePreview");
 
 // ─────────────────────────────────────────
-// 🚫 BLOCK REDIRECT WHILE STEAM LOGIN IS IN PROGRESS
+// STEAM LOGIN BLOCK REDIRECT
 // ─────────────────────────────────────────
 const urlCheck = new URL(window.location.href);
 if (urlCheck.searchParams.get("steamToken")) {
-  console.log("⚡ Steam login token found — blocking redirect...");
   window.__steamLoginInProgress = true;
 }
 
 // ─────────────────────────────────────────
-// 🎟️ STEAM LOGIN TOKEN HANDLER
+// STEAM LOGIN HANDLER
 // ─────────────────────────────────────────
 async function handleSteamLogin() {
   const url = new URL(window.location.href);
@@ -30,7 +29,6 @@ async function handleSteamLogin() {
 
   if (!steamToken) return;
 
-  console.log("Steam token detected:", steamToken);
   window.__steamLoginInProgress = true;
 
   try {
@@ -53,7 +51,6 @@ async function handleSteamLogin() {
     location.href = "main.html";
   } catch (err) {
     window.__steamLoginInProgress = false;
-    console.error("Steam token error:", err);
     alert("Steam login error: " + err.message);
   }
 }
@@ -61,14 +58,11 @@ async function handleSteamLogin() {
 handleSteamLogin();
 
 // ─────────────────────────────────────────
-// 🔐 AUTH HANDLER — FIXED VERSION
+// AUTH STATE HANDLER
 // ─────────────────────────────────────────
 auth.onAuthStateChanged(async user => {
   if (!user) {
-    if (window.__steamLoginInProgress) {
-      console.log("⏳ Waiting for Steam login...");
-      return;
-    }
+    if (window.__steamLoginInProgress) return;
     location.href = "index.html";
     return;
   }
@@ -82,7 +76,7 @@ auth.onAuthStateChanged(async user => {
 
   currentUser = user;
 
-  // ─────────── LOAD FIRESTORE USER DATA ───────────
+  // Load Firestore User Data
   const userDoc = await db.collection("users").doc(user.uid).get();
   const u = userDoc.exists ? userDoc.data() : {};
   userRole = u.role || "member";
@@ -95,52 +89,66 @@ auth.onAuthStateChanged(async user => {
   if (userNameElement) userNameElement.textContent = name;
 
   // ─────────────────────────────────────────
-  // PROFILE LINK (FIXED)
+  // FINAL PROFILE FIX — ALWAYS REDIRECT TO profile.html?id=UID
   // ─────────────────────────────────────────
-  const profileLink = document.getElementById("profileLink");
-  if (profileLink) {
-    profileLink.href = "profile.html";
+  function goToProfile() {
+    if (!currentUser) return;
+    window.location.href = `profile.html?id=${currentUser.uid}`;
+  }
+
+  const profileLink1 = document.getElementById("profileLink");
+  if (profileLink1) {
+    profileLink1.href = "#";
+    profileLink1.onclick = (e) => {
+      e.preventDefault();
+      goToProfile();
+    };
   }
 
   const profileLink2 = document.getElementById("profileLink2");
   if (profileLink2) {
-    profileLink2.href = "profile.html";
+    profileLink2.href = "#";
+    profileLink2.onclick = (e) => {
+      e.preventDefault();
+      goToProfile();
+    };
+  }
+
+  const avatar = document.getElementById("userAvatar");
+  if (avatar) {
+    avatar.style.cursor = "pointer";
+    avatar.onclick = goToProfile;
   }
 
   // ─────────────────────────────────────────
-  // AVATAR FIX + CLICK → PROFILE
+  // AVATAR RENDER
   // ─────────────────────────────────────────
-  const av = document.getElementById("userAvatar");
-  if (av) {
+  if (avatar) {
     const setInitialAvatar = () => {
-      av.style.background = `hsl(${(name.charCodeAt(0) * 7) % 360},70%,55%)`;
-      av.style.backgroundImage = "";
-      av.textContent = name[0].toUpperCase();
+      avatar.style.background = `hsl(${(name.charCodeAt(0) * 7) % 360},70%,55%)`;
+      avatar.style.backgroundImage = "";
+      avatar.textContent = name[0].toUpperCase();
     };
 
     if (u.avatarUrl) {
       const img = new Image();
       img.onload = () => {
-        av.style.backgroundImage = `url(${u.avatarUrl})`;
-        av.style.backgroundSize = "cover";
-        av.style.backgroundPosition = "center";
-        av.textContent = "";
+        avatar.style.backgroundImage = `url(${u.avatarUrl})`;
+        avatar.style.backgroundSize = "cover";
+        avatar.style.backgroundPosition = "center";
+        avatar.textContent = "";
       };
       img.onerror = setInitialAvatar;
       img.src = u.avatarUrl;
     } else {
       setInitialAvatar();
     }
-
-    av.style.cursor = "pointer";
-    av.onclick = () => {
-      location.href = "profile.html";
-    };
   }
 
+  // Admin check
   const isAdmin = userRole === "admin";
 
-  // MAINTENANCE FOR ADMIN
+  // Maintenance mode (admin)
   if (isPreview && isAdmin) {
     try {
       const maintDoc = await db.collection("config").doc("maintenance").get();
@@ -152,24 +160,22 @@ auth.onAuthStateChanged(async user => {
           <h1>Сајтот е во одржување</h1>
           <p>${safeMsg}</p>
           <button class="btn-back" onclick="location.href='admin.html'">Назад</button>
-          <div class="note">Ќе се вратиме наскоро!</div>
         </div>
       `;
     } catch {}
     return;
   }
 
-  // MAINTENANCE FOR NORMAL USERS
+  // Maintenance mode (users)
   if (!isAdmin) {
     try {
       const maintDoc = await db.collection("config").doc("maintenance").get();
       if (maintDoc.exists && maintDoc.data().enabled) {
-        const safeMsg = escapeHtml(maintDoc.data().message || "Сајтот е во одржување...");
+        const safeMsg = escapeHtml(maintDoc.data().message);
         document.body.innerHTML = `
           <div class="maintenance-screen">
             <h1>Сајтот е во одржување</h1>
             <p>${safeMsg}</p>
-            <div class="note">Ќе се вратиме наскоро!</div>
           </div>
         `;
         return;
@@ -177,7 +183,7 @@ auth.onAuthStateChanged(async user => {
     } catch {}
   }
 
-  // PANELS
+  // Show admin panel
   const adminPanel = document.getElementById("adminPanel");
   if (isAdmin && adminPanel) adminPanel.style.display = "block";
 
@@ -186,7 +192,7 @@ auth.onAuthStateChanged(async user => {
     modPanel.style.display = "block";
   }
 
-  // Set online
+  // Set user online
   await db.collection("users").doc(user.uid).set(
     {
       online: true,
@@ -218,14 +224,13 @@ auth.onAuthStateChanged(async user => {
 
         const onlineEl = document.getElementById("onlineCount");
         if (onlineEl) onlineEl.textContent = count;
-      })
-      .catch(err => console.error("Online count error:", err));
+      });
   };
 
   updateOnlineCount();
   setInterval(updateOnlineCount, 30000);
 
-  // Set offline on exit
+  // Offline on exit
   window.addEventListener("beforeunload", () => {
     db.collection("users")
       .doc(user.uid)
@@ -238,7 +243,7 @@ auth.onAuthStateChanged(async user => {
 });
 
 // ─────────────────────────────────────────
-// 📊 STATISTICS
+// STATS
 // ─────────────────────────────────────────
 async function loadStats() {
   try {
@@ -251,20 +256,16 @@ async function loadStats() {
       comments += com.size;
     }
 
-    const memberCountEl = document.getElementById("memberCount");
-    const threadCountEl = document.getElementById("threadCount");
-    const commentCountEl = document.getElementById("commentCount");
-
-    if (memberCountEl) memberCountEl.textContent = users.size;
-    if (threadCountEl) threadCountEl.textContent = threads.size;
-    if (commentCountEl) commentCountEl.textContent = comments;
+    document.getElementById("memberCount").textContent = users.size;
+    document.getElementById("threadCount").textContent = threads.size;
+    document.getElementById("commentCount").textContent = comments;
   } catch (err) {
     console.error("STATS ERROR:", err);
   }
 }
 
 // ─────────────────────────────────────────
-// 🎮 LIVE MATCHES
+// LIVE MATCHES
 // ─────────────────────────────────────────
 const liveCache = {};
 const CACHE_TIME = 5 * 60 * 1000;
@@ -275,7 +276,7 @@ async function loadLiveMatches() {
   const out = document.getElementById("liveMatches");
   if (!out) return;
 
-  out.innerHTML = "Проверувам...";
+  out.textContent = "Проверувам...";
 
   try {
     const users = await db.collection("users")
@@ -324,30 +325,19 @@ async function loadLiveMatches() {
 
         const html = `
           <div class="live-match">
-            <span class="live-hero">${escapeHtml(username)}</span> е во
-            <span class="live-hero">${duration < 2 ? "matchmaking" : "game"}</span> со
-            <span class="live-hero">${escapeHtml(hero)}</span>
-            <br>
-            <span class="live-kda">KDA: ${kda}</span> —
-            <span class="live">Време: ${duration} мин</span>
-            <br>
-            <a href="https://www.dotabuff.com/matches/${match.match_id}"
-               target="_blank" class="watch-btn">ГЛЕДАЈ</a>
+            <strong>${escapeHtml(username)}</strong> — ${hero}<br>
+            KDA: ${kda} | ${duration} мин
           </div>
         `;
 
         liveCache[steamId] = { html, time: now };
         results.push(html);
-      } catch (e) {
-        console.error("OpenDota Error:", e);
-        liveCache[steamId] = { html: null, time: now };
-      }
+      } catch {}
     }
 
     out.innerHTML = results.length ? results.join("") : "Никој не игра моментално.";
-  } catch (err) {
-    console.error("LIVE MATCHES ERROR:", err);
-    out.innerHTML = "Грешка при читање.";
+  } catch {
+    out.textContent = "Грешка.";
   }
 }
 
@@ -367,7 +357,7 @@ async function getHeroName(heroId) {
 }
 
 // ─────────────────────────────────────────
-// ⏰ Time + Country
+// COUNTRY + TIME
 // ─────────────────────────────────────────
 function updateTimeAndCountry() {
   const now = new Date();
@@ -391,16 +381,13 @@ function updateTimeAndCountry() {
 
   const applyCountry = data => {
     if (countryCodeEl) countryCodeEl.textContent = data.code;
-    if (countryFlagEl) {
-      countryFlagEl.src =
-        `https://flagcdn.com/16x12/${data.code.toLowerCase()}.png`;
-    }
+    if (countryFlagEl)
+      countryFlagEl.src = `https://flagcdn.com/16x12/${data.code.toLowerCase()}.png`;
     if (countryNameEl) countryNameEl.textContent = data.name;
   };
 
   if (cached && cacheTime && (nowTime - cacheTime < 300000)) {
-    const data = JSON.parse(cached);
-    applyCountry(data);
+    applyCountry(JSON.parse(cached));
     return;
   }
 
@@ -408,12 +395,7 @@ function updateTimeAndCountry() {
     .then(res => res.json())
     .then(data => {
       const code = data.country || "??";
-      let name;
-      if (code === "MK") {
-        name = "Македонија";
-      } else {
-        name = data.country_name || code || "Непозната";
-      }
+      const name = code === "MK" ? "Македонија" : (data.country_name || code || "Непозната");
 
       const countryData = { code, name };
       applyCountry(countryData);
@@ -422,11 +404,7 @@ function updateTimeAndCountry() {
       localStorage.setItem("countryDataTime", String(nowTime));
     })
     .catch(() => {
-      const fallback = { code: "??", name: "Непозната" };
-      if (countryFlagEl) {
-        countryFlagEl.src = "https://flagcdn.com/16x12/un.png";
-      }
-      applyCountry(fallback);
+      applyCountry({ code: "??", name: "Непозната" });
     });
 }
 
