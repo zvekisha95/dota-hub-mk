@@ -1,6 +1,133 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+    <meta charset="UTF-8">
+    <title>Нова тема – Zvekisha Dota Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            margin: 0;
+            background: radial-gradient(circle at top, #1e293b 0, #020617 55%, #000 100%);
+            color: #e5e7eb;
+            font-family: system-ui, sans-serif;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 92%;
+            margin: 40px auto;
+            background: rgba(15,23,42,0.95);
+            padding: 25px 30px;
+            border-radius: 18px;
+            border: 1px solid rgba(55,65,81,0.55);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.50);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .input-box {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #94a3b8;
+            font-size: 0.95rem;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            border-radius: 10px;
+            border: 1px solid rgba(148,163,184,0.30);
+            background: rgba(30,41,59,0.6);
+            color: #fff;
+            resize: vertical;
+        }
+
+        textarea {
+            height: 160px;
+        }
+
+        .create-btn {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            background: #22c55e;
+            color: #000;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .create-btn:hover {
+            transform: translateY(-2px);
+            background: #2dd46f;
+        }
+
+        .back {
+            display: inline-block;
+            margin-top: 25px;
+            color: #22c55e;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .back:hover {
+            text-decoration: underline;
+        }
+
+        #statusMsg {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .success { color: #22c55e; }
+        .error { color: #ef4444; }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Креирај нова тема</h1>
+
+    <div class="input-box">
+        <label>Наслов на темата</label>
+        <input type="text" id="threadTitleInput" placeholder="Внеси наслов...">
+    </div>
+
+    <div class="input-box">
+        <label>Содржина</label>
+        <textarea id="threadBodyInput" placeholder="Внеси ја содржината на темата..."></textarea>
+    </div>
+
+    <button class="create-btn" onclick="createThread()">Објави тема</button>
+
+    <div id="statusMsg"></div>
+
+    <a class="back" href="forum.html">⟵ Назад кон форум</a>
+</div>
+
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
 <script src="js/firebase-config.js"></script>
 <script src="js/new-thread.js"></script>
+
+</body>
+</html>
