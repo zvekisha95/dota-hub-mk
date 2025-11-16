@@ -14,10 +14,10 @@ auth.onAuthStateChanged(async user => {
         return;
     }
 
-    // ✔ Allow Steam users (providerId = "custom")
+    // Provider (Steam = custom token)
     const provider = user.providerData[0]?.providerId || "custom";
 
-    // ❌ For email/password → check emailVerified
+    // Email users ⇒ must verify
     if (provider === "password" && !user.emailVerified) {
         alert("Провери ја емаил адресата за да влезеш.");
         location.href = "index.html";
@@ -32,7 +32,7 @@ auth.onAuthStateChanged(async user => {
 
     userRole = data.role || "member";
 
-    // ✔ Allow only admins & moderators
+    // Allow only admin/mod
     if (userRole !== "admin" && userRole !== "moderator") {
         alert("Немаш дозвола да влезеш во мод панел.");
         location.href = "main.html";
@@ -44,7 +44,7 @@ auth.onAuthStateChanged(async user => {
 });
 
 // ─────────────────────────────
-// 🚩 LOAD FLAGGED COMMENTS
+// 🚩 LOAD FLAGGED COMMENTS (Improved)
 // ─────────────────────────────
 async function loadFlaggedComments() {
     const out = document.getElementById("flaggedComments");
@@ -55,18 +55,22 @@ async function loadFlaggedComments() {
         let results = [];
 
         for (const t of threadsSnap.docs) {
+            const tData = t.data();
+
             const comments = await t.ref
                 .collection("comments")
                 .where("flagged", "==", true)
                 .get();
 
             comments.forEach(doc => {
+                const c = doc.data();
+
                 results.push({
                     threadId: t.id,
-                    threadTitle: escapeHtml(t.data().title || "Без наслов"),
+                    threadTitle: escapeHtml(tData.title || "Без наслов"),
                     id: doc.id,
-                    text: escapeHtml(doc.data().text || ""),
-                    author: escapeHtml(doc.data().author || "???")
+                    text: escapeHtml(c.text || c.body || ""),
+                    author: escapeHtml(c.author || c.authorName || "???")
                 });
             });
         }
@@ -131,7 +135,7 @@ async function loadThreads() {
                     <div>
                         <strong>${escapeHtml(t.title || "Без наслов")}</strong>
                         <br>
-                        <span class="author">${escapeHtml(t.author || "???")}</span>
+                        <span class="author">${escapeHtml(t.author || t.authorName || "???")}</span>
                         <br>
                         <a href="thread.html?id=${doc.id}" class="small-link">→ Отвори</a>
                     </div>
@@ -169,7 +173,10 @@ async function unflagComment(threadId, commentId) {
             .doc(threadId)
             .collection("comments")
             .doc(commentId)
-            .update({ flagged: false, flaggedBy: [] });
+            .update({
+                flagged: false,
+                flaggedBy: []
+            });
 
         loadFlaggedComments();
     } catch {
