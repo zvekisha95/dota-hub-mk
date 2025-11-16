@@ -31,7 +31,6 @@ async function handleSteamLogin() {
   if (!steamToken) return;
 
   console.log("Steam token detected:", steamToken);
-
   window.__steamLoginInProgress = true;
 
   try {
@@ -43,7 +42,6 @@ async function handleSteamLogin() {
       lastSeen: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
-    // Steam login done → allow redirects
     window.__steamLoginInProgress = false;
 
     url.searchParams.delete("steamToken");
@@ -61,43 +59,52 @@ async function handleSteamLogin() {
 handleSteamLogin();
 
 // ─────────────────────────────────────────
-// 🔐 AUTH HANDLER (STEAM FIXED)
+// 🔐 AUTH HANDLER — FIXED VERSION
 // ─────────────────────────────────────────
 auth.onAuthStateChanged(async user => {
 
-  // 🛑 MAIN FIX — DO NOT REDIRECT WHEN STEAM IS LOGGING IN
+  // 🛑 BLOCK redirect while Steam login is still running
   if (!user) {
     if (window.__steamLoginInProgress) {
-      console.log("⏳ Waiting for Steam login (preventing redirect)...");
+      console.log("⏳ Waiting for Steam login...");
       return;
     }
     location.href = "index.html";
     return;
   }
 
-  // ⭐ FIX: Safe check for Steam UID
-  const isSteamUser = typeof user.uid === "string" && user.uid.startsWith("steam:");
+  const isSteamUser = user.uid.startsWith("steam:");
 
-  // ⭐ FIX: Email users must verify email
-  if (!isSteamUser && user.email && user.email !== "" && !user.emailVerified) {
+  // ❗ FIX: Email users must verify email — Steam users do NOT
+  if (!isSteamUser && user.email && !user.emailVerified) {
     location.href = "index.html";
     return;
   }
 
   currentUser = user;
 
-  // Load Firestore profile
+  // ─────────── LOAD FIRESTORE USER DATA ───────────
   const userDoc = await db.collection("users").doc(user.uid).get();
   const u = userDoc.exists ? userDoc.data() : {};
   userRole = u.role || "member";
 
-  const name = u.username || (user.email ? user.email.split("@")[0] : "Корисник");
+  const name =
+    u.username ||
+    (user.email ? user.email.split("@")[0] : "Корисник");
 
   const userNameElement = document.getElementById("userName");
   if (userNameElement) userNameElement.textContent = name;
 
   // ─────────────────────────────────────────
-  // 🖼 Avatar
+  // PROFILE LINK FIX → NOW WORKS 100%
+  // ─────────────────────────────────────────
+  const profileLink = document.getElementById("profileLink");
+  if (profileLink) {
+    profileLink.href = `profile.html?id=${user.uid}`;
+  }
+
+  // ─────────────────────────────────────────
+  // AVATAR FIX
   // ─────────────────────────────────────────
   const av = document.getElementById("userAvatar");
   if (av) {
@@ -109,10 +116,12 @@ auth.onAuthStateChanged(async user => {
         av.style.backgroundPosition = "center";
         av.textContent = "";
       };
-      img.onerror = () => { av.textContent = name[0].toUpperCase(); };
+      img.onerror = () => {
+        av.textContent = name[0].toUpperCase();
+      };
       img.src = u.avatarUrl;
     } else {
-      av.style.background = `hsl(${(name.charCodeAt(0)*7)%360},70%,55%)`;
+      av.style.background = `hsl(${(name.charCodeAt(0) * 7) % 360},70%,55%)`;
       av.textContent = name[0].toUpperCase();
     }
   }
@@ -178,11 +187,12 @@ auth.onAuthStateChanged(async user => {
   loadLiveMatches();
   setInterval(loadLiveMatches, 15000);
 
-  // Online counter
+  // ONLINE COUNTER
   const updateOnlineCount = () => {
     const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
 
-    db.collection("users").where("online", "==", true)
+    db.collection("users")
+      .where("online", "==", true)
       .get()
       .then(snap => {
         let count = 0;
@@ -201,7 +211,7 @@ auth.onAuthStateChanged(async user => {
   updateOnlineCount();
   setInterval(updateOnlineCount, 30000);
 
-  // Offline on close
+  // Set offline on exit
   window.addEventListener("beforeunload", () => {
     db.collection("users").doc(user.uid).update({
       online: false,
@@ -237,7 +247,7 @@ async function loadStats() {
 // 🎮 LIVE MATCHES
 // ─────────────────────────────────────────
 const liveCache = {};
-const CACHE_TIME = 5*60*1000;
+const CACHE_TIME = 5 * 60 * 1000;
 const MIN_DELAY = 5000;
 let lastRequestTime = 0;
 
@@ -250,7 +260,7 @@ async function loadLiveMatches() {
       .where("steamId", "!=", "")
       .limit(1)
       .get();
-    
+
     const now = Date.now();
     const results = [];
 
@@ -287,7 +297,7 @@ async function loadLiveMatches() {
 
         const hero = await getHeroName(match.hero_id);
         const kda = `${match.kills}/${match.deaths}/${match.assists}`;
-        const duration = Math.floor((now/1000 - match.start_time) / 60);
+        const duration = Math.floor((now / 1000 - match.start_time) / 60);
 
         const html = `
           <div class="live-match">
@@ -312,6 +322,7 @@ async function loadLiveMatches() {
     }
 
     out.innerHTML = results.length ? results.join("") : "Никој не игра моментално.";
+
   } catch {
     out.innerHTML = "Грешка при читање.";
   }
@@ -352,6 +363,7 @@ function updateTimeAndCountry() {
 
   if (cached && cacheTime && (nowTime - cacheTime < 300000)) {
     const data = JSON.parse(cached);
+
     document.getElementById("userCountry").textContent = data.code;
     document.getElementById("countryFlag").src =
       `https://flagcdn.com/16x12/${data.code.toLowerCase()}.png`;
