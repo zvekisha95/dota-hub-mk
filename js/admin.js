@@ -10,9 +10,13 @@ const maintEnabledEl = document.getElementById("maintEnabled");
 const maintMessageEl = document.getElementById("maintMessage");
 const maintStatusEl = document.getElementById("maintStatus");
 
-// 🔐 Проверка за admin
+// 🔐 Проверка за admin (со Steam fix)
 auth.onAuthStateChanged(async user => {
-  if (!user || !user.emailVerified) {
+  // 👇 дозволи Steam корисници (uid почнува со steam:)
+  const isSteamUser =
+    user && typeof user.uid === "string" && user.uid.startsWith("steam:");
+
+  if (!user || (!isSteamUser && user.email && !user.emailVerified)) {
     location.href = "index.html";
     return;
   }
@@ -44,7 +48,9 @@ async function loadUsers() {
   userListEl.innerHTML = `<div class="loading">Вчитувам корисници...</div>`;
 
   try {
-    const snap = await db.collection("users").orderBy("createdAt", "desc").get();
+    const snap = await db.collection("users")
+      .orderBy("createdAt", "desc")
+      .get();
 
     if (snap.empty) {
       userListEl.innerHTML = `<p class="empty">Нема корисници во базата.</p>`;
@@ -62,7 +68,8 @@ async function loadUsers() {
       const role = u.role || "member";
       const banned = u.banned === true;
 
-      const created = u.createdAt?.toDate?.().toLocaleString("mk-MK") || "??";
+      const created =
+        u.createdAt?.toDate?.().toLocaleString("mk-MK") || "??";
 
       const isSelf = id === currentUser.uid;
 
