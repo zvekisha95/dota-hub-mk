@@ -2,11 +2,10 @@
 <html lang="mk">
 <head>
     <meta charset="UTF-8">
-    <title>Zvekisha Dota Hub – Форум</title>
+    <title>Zvekisha Dota Hub – Профил</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-
 body {
     margin: 0;
     background: radial-gradient(circle at top, #1e293b 0, #020617 55%, #000 100%);
@@ -14,232 +13,97 @@ body {
     font-family: system-ui, sans-serif;
 }
 
-/* ========================================================= */
-/* ========================= TOP BAR ======================== */
-/* ========================================================= */
-
-.topbar {
-  width: 100%;
-  padding: 10px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: radial-gradient(circle at top,
-    rgba(15,23,42,0.9) 0,
-    rgba(15,23,42,0.95) 45%,
-    #020617 100%
-  );
-  border-bottom: 1px solid rgba(30,64,175,0.8);
-  box-shadow: 0 6px 20px rgba(15,23,42,0.8);
-}
-
-.topbar-inner {
-  width: 100%;
-  max-width: 1050px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.logo-badge {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  background: radial-gradient(circle at 30% 0%, #bfdbfe 0, #1d4ed8 45%, #020617 100%);
-  box-shadow: 0 0 16px rgba(59,130,246,0.9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 1.2rem;
-}
-
-.logo-text {
-  font-weight: 700;
-  font-size: 1.2rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #bfdbfe;
-  text-shadow: 0 0 18px rgba(96,165,250,0.85);
-}
-
-.top-links {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-
-.top-links a {
-  color: #e5e7eb;
-  text-decoration: none;
-  font-size: 0.9rem;
-  opacity: 0.85;
-  transition: 0.2s;
-  white-space: nowrap;
-}
-
-.top-links a:hover {
-  opacity: 1;
-  color: #bfdbfe;
-}
-
-/* DONATE BUTTON */
-.donate-btn {
-  background: linear-gradient(180deg, #3b82f6, #1e40af);
-  padding: 7px 14px;
-  border-radius: 10px;
-  color: #e0f2fe !important;
-  font-weight: 700;
-  font-size: 0.9rem;
-  border: 1px solid rgba(191,219,254,0.45);
-  text-decoration: none;
-  box-shadow: 0 0 18px rgba(59,130,246,0.85);
-  transition: 0.15s ease-in-out;
-}
-
-.donate-btn:hover {
-  transform: scale(1.07);
-  filter: brightness(1.15);
-  box-shadow: 0 0 26px rgba(96,165,250,0.95);
-}
-
-/* ========================================================= */
-/* ===================== FORUM PAGE ========================= */
-/* ========================================================= */
-
 .container {
-    max-width: 1100px;
+    max-width: 900px;
     margin: 40px auto;
     background: rgba(15,23,42,0.95);
-    padding: 20px 30px;
+    padding: 25px 32px;
     border-radius: 16px;
     border: 1px solid rgba(55,65,81,0.6);
     box-shadow: 0 8px 25px rgba(0,0,0,0.5);
 }
 
-h1 {
-    text-align: center;
-    margin-bottom: 30px;
-}
+h1 { margin-bottom: 20px; }
 
-.thread-card {
-    padding: 12px 14px;
-    background: rgba(30,41,59,0.5);
-    border: 1px solid rgba(55,65,81,0.5);
-    border-radius: 10px;
-    margin-bottom: 10px;
-}
-
-.thread-horizontal {
+.profile-header {
     display: flex;
     align-items: center;
     gap: 20px;
-    padding: 4px 0;
-    font-size: 0.9rem;
 }
 
-.avatar.small {
-    width: 36px;
-    height: 36px;
+.avatar-big {
+    width: 70px;
+    height: 70px;
     border-radius: 50%;
     background-size: cover;
     background-position: center;
-    background-color: #334155;
+    font-size: 2rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
-    color: white;
 }
 
-.thread-title {
-    flex: 1;
+.section {
+    margin-top: 25px;
+}
+
+.item-title {
     color: #60a5fa;
-    font-weight: bold;
     text-decoration: none;
-    font-size: 1rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    display:block;
+    margin-bottom: 6px;
 }
 
-.thread-type,
-.thread-user,
-.thread-date,
-.thread-comments {
-    white-space: nowrap;
-    font-size: 0.85rem;
-    color: #9ca3af;
+.comment-item {
+    margin-bottom: 14px;
 }
 
-.new-thread {
-    display: inline-block;
-    margin-bottom: 20px;
-    color: #22c55e;
+.cm-thread {
     font-weight: bold;
+    color: #93c5fd;
     text-decoration: none;
 }
-
-.new-thread:hover {
-    text-decoration: underline;
-}
-
-.error { color: #ef4444; }
-.empty { color: #9ca3af; font-style: italic; }
-.loading { color: #60a5fa; }
-
 </style>
 </head>
 
 <body>
 
-<!-- ================= TOP BAR (NEW) ================= -->
-<div class="topbar">
-  <div class="topbar-inner">
-
-    <div class="logo">
-      <div class="logo-badge">Z</div>
-      <div class="logo-text">Zvekisha Dota Hub</div>
-    </div>
-
-    <div class="top-links">
-      <a href="main.html">Главна</a>
-      <a href="forum.html">Форум</a>
-      <a href="#" id="profileLink">Профил</a>
-      <a href="#" onclick="logoutUser()">Одјави се</a>
-      <a href="https://www.paypal.com/paypalme/Zvekisha" target="_blank" class="donate-btn">🅿 Donate</a>
-    </div>
-
-  </div>
-</div>
-
 <div class="container">
-    <h1>Форум</h1>
 
-    <a href="new-thread.html" class="new-thread">➕ Криирај нова тема</a>
+    <div class="profile-header">
+        <div class="avatar-big" id="p_avatar">U</div>
+        <div>
+            <h1 id="p_name">Вчитувам...</h1>
+            <div>Улога: <span id="p_role"></span></div>
+            <div>Бан: <span id="p_banned"></span></div>
+            <div>Креиран: <span id="p_created"></span></div>
+            <div>Држава: <span id="p_country"></span></div>
+        </div>
+    </div>
 
-    <div id="threadList"></div>
+    <div class="section">
+        <h2>Објавени теми (<span id="threadCountProfile">0</span>)</h2>
+        <div id="userThreads"></div>
+    </div>
+
+    <div class="section">
+        <h2>Коментари (<span id="commentCountProfile">0</span>)</h2>
+        <div id="userComments"></div>
+    </div>
+
+    <div class="section">
+        <h2>Dota 2 Профил</h2>
+        <div id="dotaProfile"></div>
+    </div>
+
 </div>
 
-<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
 <script src="js/firebase-config.js"></script>
-<script src="js/forum.js"></script>
-
-<script>
-function logoutUser() {
-    auth.signOut().then(() => location.href = "index.html");
-}
-</script>
+<script src="js/profile.js"></script>
 
 </body>
 </html>
