@@ -10,17 +10,14 @@ let userRole = "member";
 // ─────────────────────────────
 auth.onAuthStateChanged(async user => {
 
-    // Дали е Steam user?
     const isSteamUser =
         user && typeof user.uid === "string" && user.uid.startsWith("steam:");
 
-    // Ако НЕ е логирани → назад
     if (!user) {
         location.href = "index.html";
         return;
     }
 
-    // Ако е email/password без верификација → назад
     if (!isSteamUser && user.email && !user.emailVerified) {
         alert("Мораш да ја верификуваш email адресата.");
         location.href = "index.html";
@@ -29,11 +26,9 @@ auth.onAuthStateChanged(async user => {
 
     currentUser = user;
 
-    // Load Firestore data
     const doc = await db.collection("users").doc(user.uid).get();
     const data = doc.exists ? doc.data() : {};
 
-    // banned?
     if (data.banned === true) {
         alert("Ти си баниран од форумот.");
         location.href = "main.html";
@@ -46,7 +41,7 @@ auth.onAuthStateChanged(async user => {
 });
 
 // ─────────────────────────────
-// 📌 LOAD THREADS
+// 📌 LOAD THREADS (BLIZZARD STYLE)
 // ─────────────────────────────
 async function loadThreads() {
     const list = document.getElementById("threadList");
@@ -69,6 +64,7 @@ async function loadThreads() {
             const id = doc.id;
 
             const title = escapeHtml(thread.title || "Без наслов");
+            const type = escapeHtml(thread.type || "Обична");
             const author = escapeHtml(thread.author || "Непознат");
             const avatar = thread.avatarUrl || "";
             const time = thread.createdAt?.toDate?.().toLocaleString("mk-MK") || "??";
@@ -78,28 +74,26 @@ async function loadThreads() {
 
             const html = `
                 <div class="thread-card">
-                    <div class="thread-header">
+                    <div class="thread-horizontal">
+
+                        <div class="avatar small"
+                             style="${avatar ? `background-image:url('${avatar}')` : ""}">
+                            ${!avatar ? author.charAt(0).toUpperCase() : ""}
+                        </div>
+
                         <a href="thread.html?id=${id}" class="thread-title">${title}</a>
+
+                        <span class="thread-type">${type}</span>
+                        <span class="thread-user">${author}</span>
+                        <span class="thread-date">${time}</span>
+                        <span class="thread-comments">${comments} коментари</span>
+
                     </div>
 
-                    <div class="thread-info">
-                        <div class="author">
-                            <div class="avatar"
-                                 style="${avatar ? `background-image:url('${avatar}')` : ""}">
-                                ${!avatar ? author.charAt(0).toUpperCase() : ""}
-                            </div>
-                            <span>${author}</span>
-                        </div>
-
-                        <div class="meta">
-                            <span>${time}</span>
-                            <span>${comments} коментари</span>
-                        </div>
-                    </div>
-
-                    ${canModerate ? `
-                        <button onclick="deleteThread('${id}')" class="btn-delete">Избриши</button>
-                    ` : ""}
+                    ${canModerate ?
+                        `<button onclick="deleteThread('${id}')" class="btn-delete">Избриши</button>`
+                        : ""
+                    }
                 </div>
             `;
 
@@ -128,10 +122,11 @@ async function getCommentCount(threadId) {
 }
 
 // ─────────────────────────────
-// ❌ DELETE THREAD (MOD/ADMIN)
+// ❌ DELETE THREAD
 // ─────────────────────────────
 async function deleteThread(id) {
-    if (!confirm("Дали сигурно сакаш да ја избришеш темата?")) return;
+    if (!confirm("Дали сигурно сакаш да ја избришеш темата?"))
+        return;
 
     try {
         await db.collection("threads").doc(id).delete();
@@ -144,10 +139,11 @@ async function deleteThread(id) {
 }
 
 // ─────────────────────────────
-// 🛡 SANITIZE HTML
+// 🛡 ESCAPE
 // ─────────────────────────────
 function escapeHtml(text) {
     const div = document.createElement("div");
     div.textContent = text;
     return div.innerHTML;
 }
+
