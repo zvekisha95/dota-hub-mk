@@ -1,3 +1,4 @@
+
 // ─────────────────────────────
 // 🔥 INIT DATA
 // ─────────────────────────────
@@ -41,7 +42,7 @@ auth.onAuthStateChanged(async user => {
 });
 
 // ─────────────────────────────
-// 📌 LOAD THREADS (BLIZZARD STYLE)
+// 📌 LOAD THREADS
 // ─────────────────────────────
 async function loadThreads() {
     const list = document.getElementById("threadList");
@@ -60,40 +61,46 @@ async function loadThreads() {
         list.innerHTML = "";
 
         for (const doc of snap.docs) {
-            const thread = doc.data();
+            const t = doc.data();
             const id = doc.id;
 
-            const title = escapeHtml(thread.title || "Без наслов");
-            const type = escapeHtml(thread.type || "Обична");
-            const author = escapeHtml(thread.author || "Непознат");
-            const avatar = thread.avatarUrl || "";
-            const time = thread.createdAt?.toDate?.().toLocaleString("mk-MK") || "??";
+            const title = escapeHtml(t.title || "Без наслов");
+            const author = escapeHtml(t.author || "Непознат");
+            const avatar = t.avatarUrl || "";
+            const time = t.createdAt?.toDate?.().toLocaleString("mk-MK") || "??";
             const comments = await getCommentCount(id);
 
             const canModerate = userRole === "admin" || userRole === "moderator";
 
+            // shorten date
+            let shortDate = time.split(",")[0];
+            let shortTime = time.split(",")[1]?.trim().slice(0,5);
+            let finalDate = `${shortDate} • ${shortTime}`;
+
             const html = `
                 <div class="thread-card">
-                    <div class="thread-horizontal">
+
+                    <div class="thread-row">
 
                         <div class="avatar small"
-                             style="${avatar ? `background-image:url('${avatar}')` : ""}">
+                            style="${avatar ? `background-image:url('${avatar}')` : ""}">
                             ${!avatar ? author.charAt(0).toUpperCase() : ""}
                         </div>
 
                         <a href="thread.html?id=${id}" class="thread-title">${title}</a>
 
-                        <span class="thread-type">${type}</span>
-                        <span class="thread-user">${author}</span>
-                        <span class="thread-date">${time}</span>
-                        <span class="thread-comments">${comments} коментари</span>
+                        <a href="profile.html?id=${t.authorId}" class="thread-author">
+                            ${author}
+                        </a>
 
+                        <span class="thread-date">${finalDate}</span>
+
+                        <span class="thread-comments">💬 ${comments}</span>
                     </div>
 
-                    ${canModerate ?
-                        `<button onclick="deleteThread('${id}')" class="btn-delete">Избриши</button>`
-                        : ""
-                    }
+                    ${canModerate ? `
+                        <button onclick="deleteThread('${id}')" class="btn-delete">Избриши</button>
+                    ` : ""}
                 </div>
             `;
 
@@ -125,8 +132,7 @@ async function getCommentCount(threadId) {
 // ❌ DELETE THREAD
 // ─────────────────────────────
 async function deleteThread(id) {
-    if (!confirm("Дали сигурно сакаш да ја избришеш темата?"))
-        return;
+    if (!confirm("Дали сигурно сакаш да ја избришеш темата?")) return;
 
     try {
         await db.collection("threads").doc(id).delete();
@@ -139,11 +145,10 @@ async function deleteThread(id) {
 }
 
 // ─────────────────────────────
-// 🛡 ESCAPE
+// 🛡 ESCAPE HTML
 // ─────────────────────────────
 function escapeHtml(text) {
     const div = document.createElement("div");
     div.textContent = text;
     return div.innerHTML;
 }
-
