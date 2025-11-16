@@ -41,7 +41,7 @@
         .user-email { color: #9ca3af; }
         .user-meta { font-size: 0.85rem; color: #94a3b8; margin-top: 4px; }
 
-        .user-actions select, 
+        .user-actions select,
         .user-actions button {
             margin-left: 10px;
             padding: 8px;
@@ -126,7 +126,30 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
 <script src="js/firebase-config.js"></script>
-<script src="js/admin.js"></script>
+<script>
+
+// auth проверка за admin
+firebase.auth().onAuthStateChanged(async user => {
+    if (!user) {
+        location.href = "index.html";
+        return;
+    }
+
+    const db = firebase.firestore();
+    const doc = await db.collection("users").doc(user.uid).get();
+
+    if (!doc.exists || doc.data().role !== "admin") {
+        location.href = "main.html";
+        return;
+    }
+
+    // админ е, вчитај го admin.js
+    const script = document.createElement("script");
+    script.src = "js/admin.js";
+    document.body.appendChild(script);
+});
+
+</script>
 
 </body>
 </html>
