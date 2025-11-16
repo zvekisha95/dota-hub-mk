@@ -35,124 +35,64 @@
       box-shadow: 0 22px 55px rgba(0,0,0,0.85);
       border: 1px solid rgba(30, 64, 175, 0.6);
     }
-    h1 {
-      text-align: center;
-      margin: 0 0 6px;
-      font-size: 1.7rem;
-    }
-    .subtitle {
-      text-align: center;
-      margin: 0 0 16px;
-      color: #9ca3af;
-      font-size: 0.9rem;
-    }
-    label {
-      display: block;
-      font-size: 0.83rem;
-      margin-bottom: 4px;
-      color: #e5e7eb;
-    }
+    h1 { text-align:center; margin:0 0 6px; font-size:1.7rem; }
+    .subtitle { text-align:center; margin:0 0 16px; color:#9ca3af; font-size:0.9rem; }
+
+    label { display:block; font-size:0.83rem; margin-bottom:4px; color:#e5e7eb; }
     input {
-      width: 100%;
-      padding: 10px;
-      margin: 6px 0 10px;
-      border-radius: 9px;
-      border: 1px solid #1f2937;
-      outline: none;
-      background: #020617;
-      color: #e5e7eb;
-      font-size: 0.95rem;
+      width:100%; padding:10px; margin:6px 0 10px;
+      border-radius:9px; border:1px solid #1f2937;
+      background:#020617; color:#e5e7eb; font-size:0.95rem;
     }
     input:focus {
-      border-color: #22c55e;
-      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.25);
+      border-color:#22c55e;
+      box-shadow:0 0 0 1px rgba(34,197,94,0.25);
     }
     button {
-      width: 100%;
-      padding: 11px;
-      background: #e11d48;
-      color: white;
-      border: none;
-      border-radius: 999px;
-      cursor: pointer;
-      font-size: 0.95rem;
-      margin-top: 4px;
-      font-weight: 600;
+      width:100%; padding:11px;
+      background:#e11d48; color:white;
+      border:none; border-radius:999px;
+      cursor:pointer; font-size:0.95rem;
+      margin-top:4px; font-weight:600;
     }
-    button:hover { background: #fb7185; }
+    button:hover { background:#fb7185; }
 
     .btn-secondary {
-      background: transparent;
-      border: 1px solid #374151;
-      color: #e5e7eb;
-      margin-top: 8px;
-      padding: 11px;
-      border-radius: 999px;
-      font-size: 0.9rem;
-      cursor: pointer;
+      background:transparent; border:1px solid #374151;
+      color:#e5e7eb; margin-top:8px; padding:11px;
+      border-radius:999px; font-size:0.9rem; cursor:pointer;
     }
-    .btn-secondary:hover { background: rgba(15,23,42,0.8); }
+    .btn-secondary:hover { background:rgba(15,23,42,0.8); }
+
+    #loginBox, #registerBox { display:none; }
 
     #steamPreview {
-      background: rgba(15, 23, 42, 0.9);
-      border-radius: 10px;
-      border: 1px solid rgba(55,65,81,0.9);
-      padding: 8px 10px;
-      margin-top: 6px;
-      font-size: 0.85rem;
-      display: none;
+      display:none;
+      background:rgba(15,23,42,0.9);
+      border-radius:10px; border:1px solid rgba(55,65,81,0.9);
+      padding:8px 10px; margin-top:6px; font-size:0.85rem;
     }
     #steamPreview img {
-      display: block;
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      margin-top: 6px;
-      border: 1px solid #1f2937;
+      width:48px; height:48px; border-radius:50%;
+      margin-top:6px; border:1px solid #1f2937;
     }
 
-    .status {
-      font-size: 0.8rem;
-      min-height: 16px;
-      margin-top: 4px;
-      color: #9ca3af;
-      transition: 0.2s ease;
-    }
-    .status.error { color: #f97373; }
-    .status.success { color: #4ade80; }
+    .status { font-size:0.8rem; min-height:16px; margin-top:4px; color:#9ca3af; }
+    .status.error { color:#f97373; }
+    .status.success { color:#4ade80; }
+    .small-text { font-size:0.8rem; color:#9ca3af; margin-top:4px; }
 
-    .small-text {
-      font-size: 0.8rem;
-      color: #9ca3af;
-      margin-top: 4px;
-    }
-
-    .section-title {
-      text-align: center;
-      margin: 10px 0 8px;
-      font-weight: 600;
-    }
-
-    #loginBox, #registerBox {
-      display: none;
-    }
+    .section-title { text-align:center; margin:10px 0 8px; font-weight:600; }
 
     #resetModal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.75);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
+      position:fixed; inset:0; background:rgba(0,0,0,0.75);
+      display:none; align-items:center; justify-content:center; z-index:9999;
     }
     #resetModal .modal-box {
-      background: #0f172a;
-      padding: 20px;
-      border-radius: 14px;
-      width: 340px;
-      border: 1px solid #334155;
-      box-shadow: 0 0 25px rgba(0,0,0,0.4);
+      background:#0f172a; padding:20px;
+      border-radius:14px; width:340px;
+      border:1px solid #334155;
+      box-shadow:0 0 25px rgba(0,0,0,0.4);
     }
   </style>
 </head>
@@ -183,12 +123,13 @@
       <input id="loginPass" type="password" placeholder="Лозинка" />
 
       <button onclick="login()">ЛОГИРАЈ СЕ</button>
+
       <button class="btn-secondary" onclick="openResetModal()">Заборавена лозинка?</button>
 
       <button class="btn-secondary" onclick="showRegister()">Нема профил? Регистрирај се</button>
 
-      <!-- 🔥 STEAM LOGIN BUTTON -->
-      <button class="btn-secondary" onclick="location.href='/api/steam-login'">
+      <!-- 🔥 STEAM FIXED -->
+      <button class="btn-secondary" onclick="location.href='https://dota-hub-mk.vercel.app/api/steam-login'">
         Најава преку Steam
       </button>
 
@@ -215,6 +156,7 @@
       <input id="regSteamId" type="text" placeholder="Пример: 123456789" />
 
       <button onclick="previewSteamId()">Провери Steam ID / повлечи податоци</button>
+
       <div id="steamPreview"></div>
 
       <button onclick="register()">Креирај профил</button>
@@ -226,22 +168,19 @@
   </div>
 </div>
 
-<!-- RESET PASSWORD MODAL -->
+<!-- RESET MODAL -->
 <div id="resetModal">
   <div class="modal-box">
     <h2>Ресетирање лозинка</h2>
-
     <label for="resetEmail">Внеси email</label>
     <input type="email" id="resetEmail" placeholder="example@gmail.com" />
-
     <button onclick="sendResetEmail()">Испрати линк</button>
     <button class="btn-secondary" onclick="closeResetModal()">Откажи</button>
-
     <p id="resetStatus" class="status"></p>
   </div>
 </div>
 
-<!-- FIREBASE + EXTERNAL SCRIPTS -->
+<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
