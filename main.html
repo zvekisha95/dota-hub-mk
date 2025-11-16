@@ -13,10 +13,6 @@
       --accent: #22c55e;
       --text: #e5e7eb;
       --muted: #9ca3af;
-      --maint-blue: #60a5fa;
-      --maint-gray: #d1d5db;
-      --online: #22c55e;
-      --offline: #ef4444;
     }
 
     * { margin:0; padding:0; box-sizing:border-box; }
@@ -70,7 +66,6 @@
       justify-content: center;
       font-weight: 800;
       font-size: 1.2rem;
-      color: #e5e7eb;
     }
 
     .logo-text {
@@ -97,13 +92,9 @@
       white-space: nowrap;
     }
 
-    .top-links a:hover {
-      opacity: 1;
-      color: #bfdbfe;
-    }
+    .top-links a:hover { opacity: 1; color: #bfdbfe; }
 
     /* DONATE BUTTON */
-
     .donate-btn {
       background: linear-gradient(180deg, #3b82f6, #1e40af);
       padding: 7px 14px;
@@ -123,22 +114,12 @@
       box-shadow: 0 0 26px rgba(96,165,250,0.95);
     }
 
-    .donate-sub {
-      font-size: 0.7rem;
-      color: #9ca3af;
-      text-align: center;
-      margin-top: -6px;
-      margin-bottom: -2px;
-      user-select: none;
-    }
-
-    /* -------------------- REST OF PAGE -------------------- */
+    /* -------------------- PAGE CONTENT -------------------- */
 
     .wrapper {
       max-width: 1100px;
       margin: 0 auto;
       padding: 20px;
-      position:relative;
     }
 
     .hero {
@@ -180,13 +161,10 @@
       border-radius: 16px;
       border: 1px solid var(--border);
       box-shadow: 0 8px 25px rgba(0,0,0,0.5);
-      transition: transform 0.2s;
+      transition: 0.2s;
     }
 
     .card:hover { transform: translateY(-4px); }
-
-    .card a { color: #60a5fa; font-weight: 600; text-decoration:none; }
-    .card a:hover { text-decoration: underline; }
 
     .footer {
       text-align: center;
@@ -205,7 +183,6 @@
       justify-content: center;
       font-size: 1.2rem;
       background-size: cover;
-      background-position: center;
       color: #000;
     }
   </style>
@@ -224,20 +201,14 @@
 
     <div class="top-links">
       <a href="main.html">Главна</a>
+      <a href="forum.html">Форум</a>
       <a href="#" id="profileLink">Профил</a>
       <a href="#" onclick="logoutUser()">Одјави се</a>
-
-      <div style="text-align:center;">
-        <a href="https://www.paypal.com/paypalme/Zvekisha"
-           target="_blank"
-           class="donate-btn">🅿 Donate</a>
-        <div class="donate-sub">Support this site</div>
-      </div>
+      <a href="https://www.paypal.com/paypalme/Zvekisha" target="_blank" class="donate-btn">🅿 Donate</a>
     </div>
 
   </div>
 </div>
-
 
 <!-- ================= PAGE CONTENT ================= -->
 
@@ -260,11 +231,6 @@
   </div>
 
   <div class="grid">
-    <div class="card">
-      <h3>Форум</h3>
-      <p>Погледни ги последните теми и дискусии.</p>
-      <a href="forum.html">Оди на форум</a>
-    </div>
 
     <div class="card">
       <h3>Креирај тема</h3>
@@ -282,6 +248,7 @@
       <h3>Live мечеви</h3>
       <div id="liveMatches">Никој не игра моментално.</div>
     </div>
+
   </div>
 
 </div>
