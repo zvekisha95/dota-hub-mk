@@ -59,9 +59,13 @@ module.exports = (req, res) => {
         );
       }
 
-      // 👉 Return Firebase custom token back to frontend
+      // 🔥 FIX: Use FULL redirect URL
       const redirectUrl =
-        "/main.html?steamToken=" + encodeURIComponent(firebaseToken);
+        process.env.SITE_URL +
+        "/main.html?steamToken=" +
+        encodeURIComponent(firebaseToken);
+
+      console.log("✔ Redirecting user to:", redirectUrl);
 
       return res.redirect(302, redirectUrl);
 
