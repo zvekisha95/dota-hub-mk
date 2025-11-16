@@ -14,10 +14,14 @@ function getProfileId() {
 }
 
 // ─────────────────────────────
-// 🚪 Провери дали е логирани
+// 🚪 Провери дали е логирани (STEAM FIX JOINED)
 // ─────────────────────────────
 auth.onAuthStateChanged(async user => {
-    if (!user || !user.emailVerified) {
+
+    // 👇 NEW FIX: дозволи Steam корисници (uid почнува со steam:)
+    const isSteamUser = user && typeof user.uid === "string" && user.uid.startsWith("steam:");
+
+    if (!user || (!isSteamUser && !user.emailVerified)) {
         location.href = "index.html";
         return;
     }
@@ -77,7 +81,7 @@ async function loadProfile() {
         // Датум
         createdEl.textContent = createdAt;
 
-        // ЗЕМЈА (ако ја чуваш во user doc)
+        // Земја
         countryEl.textContent = country;
 
         // Аватар
@@ -147,7 +151,6 @@ async function loadUserComments() {
     out.innerHTML = `<div class="loading">Вчитувам коментари...</div>`;
 
     try {
-        // НЕМА директно query за субколекции → па мора loop, ама оптимизиран
         const threads = await db.collection("threads").get();
 
         let totalComments = 0;
@@ -201,7 +204,7 @@ async function loadUserComments() {
 }
 
 // ─────────────────────────────
-// 🛡 ESCAPE HTML (anti XSS)
+// 🛡 ESCAPE HTML
 // ─────────────────────────────
 function escapeHtml(t) {
     const d = document.createElement("div");
