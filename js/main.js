@@ -1,7 +1,7 @@
 let currentUser = null;
 let userRole = "member";
 
-// 👉 Escape HTML (безбедно)
+// 👉 Escape HTML
 function escapeHtml(t) {
   const d = document.createElement("div");
   d.textContent = t;
@@ -10,13 +10,11 @@ function escapeHtml(t) {
 
 // ➕ PREVIEW MODE
 const isPreview = localStorage.getItem("maintenancePreview") === "true";
-if (isPreview) {
-  localStorage.removeItem("maintenancePreview");
-}
+if (isPreview) localStorage.removeItem("maintenancePreview");
 
-// ─────────────────────────────
+// ─────────────────────────────────────────
 // 🎟️ STEAM LOGIN TOKEN HANDLER
-// ─────────────────────────────
+// ─────────────────────────────────────────
 async function handleSteamLogin() {
   const url = new URL(window.location.href);
   const steamToken = url.searchParams.get("steamToken");
@@ -26,21 +24,17 @@ async function handleSteamLogin() {
   console.log("Steam token detected:", steamToken);
 
   try {
-    // 🔥 Login directly with Firebase Custom Token
     const userCred = await auth.signInWithCustomToken(steamToken);
     const user = userCred.user;
 
-    // Update online status
     await db.collection("users").doc(user.uid).set({
       online: true,
       lastSeen: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
-    // Remove token from URL
     url.searchParams.delete("steamToken");
     window.history.replaceState({}, document.title, url.toString());
 
-    // Continue to main
     location.href = "main.html";
 
   } catch (err) {
@@ -51,36 +45,39 @@ async function handleSteamLogin() {
 
 handleSteamLogin();
 
-// ─────────────────────────────
-// 🔐 AUTH & USER LOAD (STEAM FIXED)
-// ─────────────────────────────
+// ─────────────────────────────────────────
+// 🔐 AUTH HANDLER (STEAM FIXED)
+// ─────────────────────────────────────────
 auth.onAuthStateChanged(async user => {
   if (!user) {
     location.href = "index.html";
     return;
   }
 
-  // ⭐ FIX — Allow Steam users even without email
-  const isSteamUser = user.uid.startsWith("steam:");
+  // ⭐ FIX: Safe check for Steam UID
+  const isSteamUser = typeof user.uid === "string" && user.uid.startsWith("steam:");
 
-  if (!isSteamUser && user.email && !user.emailVerified) {
+  // ⭐ FIX: Email users must be verified, Steam users don't have email
+  if (!isSteamUser && user.email && user.email !== "" && !user.emailVerified) {
     location.href = "index.html";
     return;
   }
 
   currentUser = user;
 
-  // Load Firestore user
+  // Load Firestore profile
   const userDoc = await db.collection("users").doc(user.uid).get();
   const u = userDoc.exists ? userDoc.data() : {};
   userRole = u.role || "member";
 
-  const name = u.username || user.email?.split("@")[0] || "Корисник";
-  document.getElementById("userName").textContent = name;
+  const name = u.username || (user.email ? user.email.split("@")[0] : "Корисник");
 
-  // ─────────────────────────────
-  // 🖼️ Аватар
-  // ─────────────────────────────
+  const userNameElement = document.getElementById("userName");
+  if (userNameElement) userNameElement.textContent = name;
+
+  // ─────────────────────────────────────────
+  // 🖼 Avatar
+  // ─────────────────────────────────────────
   const av = document.getElementById("userAvatar");
   if (av) {
     if (u.avatarUrl) {
@@ -94,19 +91,16 @@ auth.onAuthStateChanged(async user => {
       img.onerror = () => { av.textContent = name[0].toUpperCase(); };
       img.src = u.avatarUrl;
     } else {
-      av.style.background = `hsl(${(name.charCodeAt(0) * 7) % 360},70%,55%)`;
+      av.style.background = `hsl(${(name.charCodeAt(0)*7)%360},70%,55%)`;
       av.textContent = name[0].toUpperCase();
     }
   }
 
-  const profileLink = document.getElementById("profileLink");
-  if (profileLink) profileLink.href = `profile.html?id=${user.uid}`;
-
   const isAdmin = userRole === "admin";
 
-  // ─────────────────────────────
-  // 🛠️ MAINTENANCE PREVIEW (ADMIN)
-  // ─────────────────────────────
+  // ─────────────────────────────────────────
+  // MAINTENANCE PREVIEW
+  // ─────────────────────────────────────────
   if (isPreview && isAdmin) {
     try {
       const maintDoc = await db.collection("config").doc("maintenance").get();
@@ -125,9 +119,9 @@ auth.onAuthStateChanged(async user => {
     return;
   }
 
-  // ─────────────────────────────
-  // 🔒 MAINTENANCE за MEMBERS
-  // ─────────────────────────────
+  // ─────────────────────────────────────────
+  // MAINTENANCE FOR NORMAL USERS
+  // ─────────────────────────────────────────
   if (!isAdmin) {
     try {
       const maintDoc = await db.collection("config").doc("maintenance").get();
@@ -145,17 +139,15 @@ auth.onAuthStateChanged(async user => {
     } catch {}
   }
 
-  // ─────────────────────────────
-  // Panels
-  // ─────────────────────────────
-  if (userRole === "admin") {
-    document.getElementById("adminPanel").style.display = "block";
-  }
-  if (userRole === "moderator" || userRole === "admin") {
+  // ─────────────────────────────────────────
+  // PANELS
+  // ─────────────────────────────────────────
+  if (isAdmin) document.getElementById("adminPanel").style.display = "block";
+  if (isAdmin || userRole === "moderator") {
     document.getElementById("modPanel").style.display = "block";
   }
 
-  // Update online status
+  // Set online
   await db.collection("users").doc(user.uid).set({
     online: true,
     lastSeen: firebase.firestore.FieldValue.serverTimestamp()
@@ -165,12 +157,11 @@ auth.onAuthStateChanged(async user => {
   loadLiveMatches();
   setInterval(loadLiveMatches, 15000);
 
-  // ONLINE COUNTER
+  // Online counter
   const updateOnlineCount = () => {
     const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
 
-    db.collection("users")
-      .where("online", "==", true)
+    db.collection("users").where("online", "==", true)
       .get()
       .then(snap => {
         let count = 0;
@@ -190,19 +181,17 @@ auth.onAuthStateChanged(async user => {
   setInterval(updateOnlineCount, 30000);
 
   // Offline on close
-  const setOffline = () => {
-    if (!currentUser) return;
-    db.collection("users").doc(currentUser.uid).update({
+  window.addEventListener("beforeunload", () => {
+    db.collection("users").doc(user.uid).update({
       online: false,
       lastSeen: firebase.firestore.FieldValue.serverTimestamp()
     });
-  };
-  window.addEventListener("beforeunload", setOffline);
+  });
 });
 
-// ─────────────────────────────
+// ─────────────────────────────────────────
 // 📊 STATISTICS
-// ─────────────────────────────
+// ─────────────────────────────────────────
 async function loadStats() {
   try {
     const users = await db.collection("users").get();
@@ -219,15 +208,15 @@ async function loadStats() {
     document.getElementById("commentCount").textContent = comments;
 
   } catch (err) {
-    console.error("СТАТИСТИКА ERROR:", err);
+    console.error("STATS ERROR:", err);
   }
 }
 
-// ─────────────────────────────
+// ─────────────────────────────────────────
 // 🎮 LIVE MATCHES
-// ─────────────────────────────
+// ─────────────────────────────────────────
 const liveCache = {};
-const CACHE_TIME = 5 * 60 * 1000;
+const CACHE_TIME = 5*60*1000;
 const MIN_DELAY = 5000;
 let lastRequestTime = 0;
 
@@ -240,7 +229,7 @@ async function loadLiveMatches() {
       .where("steamId", "!=", "")
       .limit(1)
       .get();
-
+    
     const now = Date.now();
     const results = [];
 
@@ -264,6 +253,7 @@ async function loadLiveMatches() {
         const url = `https://api.allorigins.win/get?url=${encodeURIComponent(
           'https://api.opendota.com/api/players/' + steamId + '/matches?limit=1'
         )}`;
+
         const res = await fetch(url);
         if (!res.ok) continue;
 
@@ -276,15 +266,17 @@ async function loadLiveMatches() {
 
         const hero = await getHeroName(match.hero_id);
         const kda = `${match.kills}/${match.deaths}/${match.assists}`;
-        const duration = Math.floor((now / 1000 - match.start_time) / 60);
+        const duration = Math.floor((now/1000 - match.start_time) / 60);
 
         const html = `
           <div class="live-match">
             <span class="live-hero">${username}</span> е во
             <span class="live-hero">${duration < 2 ? "matchmaking" : "game"}</span> со
-            <span class="live-hero">${hero}</span><br>
+            <span class="live-hero">${hero}</span>
+            <br>
             <span class="live-kda">KDA: ${kda}</span> —
-            <span class="live">Време: ${duration} мин</span><br>
+            <span class="live">Време: ${duration} мин</span>
+            <br>
             <a href="https://www.dotabuff.com/matches/${match.match_id}" target="_blank" class="watch-btn">ГЛЕДАЈ</a>
           </div>
         `;
@@ -299,8 +291,7 @@ async function loadLiveMatches() {
     }
 
     out.innerHTML = results.length ? results.join("") : "Никој не игра моментално.";
-
-  } catch (err) {
+  } catch {
     out.innerHTML = "Грешка при читање.";
   }
 }
@@ -320,9 +311,9 @@ async function getHeroName(heroId) {
   }
 }
 
-// ─────────────────────────────
-// ⏰ Време + Држава
-// ─────────────────────────────
+// ─────────────────────────────────────────
+// ⏰ Time + Country
+// ─────────────────────────────────────────
 function updateTimeAndCountry() {
   const now = new Date();
   const timeString = now.toLocaleTimeString("mk-MK", {
@@ -352,7 +343,7 @@ function updateTimeAndCountry() {
     .then(data => {
       const countryData = {
         code: data.country || "??",
-        name: data.country === "MK" ? "Македонија" : (data.country_name || "Непозната")
+        name: data.country === "MK" ? "Македонија" : data.country_name || "Непозната"
       };
 
       document.getElementById("userCountry").textContent = countryData.code;
@@ -365,8 +356,7 @@ function updateTimeAndCountry() {
     })
     .catch(() => {
       document.getElementById("userCountry").textContent = "??";
-      document.getElementById("countryFlag").src =
-        "https://flagcdn.com/16x12/un.png";
+      document.getElementById("countryFlag").src = "https://flagcdn.com/16x12/un.png";
       document.getElementById("countryName").textContent = "Непозната";
     });
 }
