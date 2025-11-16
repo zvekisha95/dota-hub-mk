@@ -17,8 +17,7 @@ let currentSteamAvatar = "";
 ///////////////////////////////////////////////////////
 function setStatus(el, msg, isError = false) {
   el.textContent = msg || "";
-  if (!msg) el.className = "status";
-  else el.className = "status" + (isError ? " error" : " success");
+  el.className = "status" + (msg ? (isError ? " error" : " success") : "");
 }
 
 function escapeHtml(text) {
@@ -28,16 +27,49 @@ function escapeHtml(text) {
 }
 
 ///////////////////////////////////////////////////////
+// CLEAN STEAM TOKEN FROM URL
+///////////////////////////////////////////////////////
+(function cleanSteamToken() {
+  const url = new URL(window.location.href);
+  if (url.searchParams.get("steamToken")) {
+    url.searchParams.delete("steamToken");
+    window.history.replaceState({}, document.title, url.toString());
+  }
+})();
+
+///////////////////////////////////////////////////////
+// AUTH FIX – CHECK IF USER IS LOGGED IN
+///////////////////////////////////////////////////////
+auth.onAuthStateChanged(user => {
+  if (!user) return; // DO NOT redirect to club gate
+
+  const isSteam = user.uid.startsWith("steam:");
+
+  // email users must verify
+  if (!isSteam && user.email && !user.emailVerified) return;
+
+  // 🔥 user is fully logged in
+  window.location.href = "main.html";
+});
+
+///////////////////////////////////////////////////////
 // CLUB GATE
 ///////////////////////////////////////////////////////
 function checkCode() {
   const code = document.getElementById("clubCode").value.trim();
   if (code === CLUB_CODE) {
+    localStorage.setItem("clubAccess", "yes");
     clubGate.style.display = "none";
     loginBox.style.display = "block";
   } else {
     alert("Неточен код за клубот!");
   }
+}
+
+// If user previously passed club gate – skip it
+if (localStorage.getItem("clubAccess") === "yes") {
+  clubGate.style.display = "none";
+  loginBox.style.display = "block";
 }
 
 ///////////////////////////////////////////////////////
@@ -97,8 +129,6 @@ async function previewSteamId() {
 
   } catch (err) {
     console.error(err);
-    steamPreviewBox.style.display = "none";
-    steamPreviewBox.innerHTML = "";
     alert("Грешка при поврзување со OpenDota.");
   }
 }
@@ -107,11 +137,11 @@ async function previewSteamId() {
 // REGISTER USER
 ///////////////////////////////////////////////////////
 async function register() {
-  const username = document.getElementById("regUsername").value.trim();
-  const email    = document.getElementById("regEmail").value.trim();
-  const pass     = document.getElementById("regPass").value.trim();
-  const pass2    = document.getElementById("regConfirmPass").value.trim();
-  const steamId  = document.getElementById("regSteamId").value.trim();
+  const username = regUsername.value.trim();
+  const email    = regEmail.value.trim();
+  const pass     = regPass.value.trim();
+  const pass2    = regConfirmPass.value.trim();
+  const steamId  = regSteamId.value.trim();
 
   setStatus(regStatus, "");
 
@@ -122,7 +152,7 @@ async function register() {
     return setStatus(regStatus, "Лозинките не се совпаѓаат.", true);
 
   try {
-    setStatus(regStatus, "Се креира профил...", false);
+    setStatus(regStatus, "Се креира профил...");
 
     const userCred = await auth.createUserWithEmailAndPassword(email, pass);
     const user = userCred.user;
@@ -155,8 +185,8 @@ async function register() {
 // LOGIN USER
 ///////////////////////////////////////////////////////
 async function login() {
-  const email = document.getElementById("loginEmail").value.trim();
-  const pass  = document.getElementById("loginPass").value.trim();
+  const email = loginEmail.value.trim();
+  const pass  = loginPass.value.trim();
 
   setStatus(loginStatus, "");
 
@@ -164,7 +194,7 @@ async function login() {
     return setStatus(loginStatus, "Внеси email и лозинка.", true);
 
   try {
-    setStatus(loginStatus, "Се логираме...", false);
+    setStatus(loginStatus, "Се логираме...");
 
     const res = await auth.signInWithEmailAndPassword(email, pass);
 
@@ -195,7 +225,7 @@ function closeResetModal() {
 }
 
 async function sendResetEmail() {
-  const email       = document.getElementById("resetEmail").value.trim();
+  const email       = resetEmail.value.trim();
   const resetStatus = document.getElementById("resetStatus");
 
   if (!email)
@@ -203,7 +233,7 @@ async function sendResetEmail() {
 
   try {
     await auth.sendPasswordResetEmail(email);
-    setStatus(resetStatus, "Испратен е линк за ресетирање!", false);
+    setStatus(resetStatus, "Испратен е линк за ресетирање!");
   } catch (err) {
     console.error(err);
     setStatus(resetStatus, "Грешка: " + err.message, true);
