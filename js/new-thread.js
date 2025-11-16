@@ -1,77 +1,62 @@
 // ─────────────────────────────
-// 🔥 INIT (auth, db од firebase-config.js)
+// INIT
 // ─────────────────────────────
-
 let currentUser = null;
-let userRole = "member";
 
 // ─────────────────────────────
-// 🚪 LOGIN + STEAM FIX
+// AUTH CHECK (Steam FIXED)
 // ─────────────────────────────
 auth.onAuthStateChanged(async user => {
+
+    const isSteamUser =
+        user && typeof user.uid === "string" && user.uid.startsWith("steam:");
+
     if (!user) {
         location.href = "index.html";
         return;
     }
 
-    // Allow Steam users (uids start with "steam:")
-    const isSteamUser =
-        user && typeof user.uid === "string" && user.uid.startsWith("steam:");
-
-    // Email/password users → must verify
     if (!isSteamUser && user.email && !user.emailVerified) {
-        alert("Мораш да го верификуваш email-от.");
+        alert("Прво мора да ја верификуваш email адресата.");
         location.href = "index.html";
         return;
     }
 
     currentUser = user;
 
-    // Load user Firestore data
+    // check ban
     const doc = await db.collection("users").doc(user.uid).get();
     const data = doc.exists ? doc.data() : {};
 
-    // Banned check
     if (data.banned === true) {
-        alert("Ти си баниран и не можеш да креираш теми.");
+        alert("Баниран си од објавување теми.");
         location.href = "forum.html";
         return;
     }
-
-    userRole = data.role || "member";
-
-    // Show author name on page
-    const nameEl = document.getElementById("authorName");
-    if (nameEl) nameEl.textContent = data.username || user.email || "Корисник";
 });
 
 // ─────────────────────────────
-// ➕ КРЕИРАЊЕ НОВА ТЕМА
+// POST THREAD
 // ─────────────────────────────
 async function postThread() {
-
-    const titleInput = document.getElementById("threadTitle");
-    const bodyInput = document.getElementById("threadBody");
+    const title = document.getElementById("threadTitle").value.trim();
+    const body = document.getElementById("threadBody").value.trim();
     const statusEl = document.getElementById("postStatus");
 
-    const title = titleInput.value.trim();
-    const body = bodyInput.value.trim();
-
     statusEl.textContent = "";
-    statusEl.className = "";
+    statusEl.className = "status";
 
     if (!title || !body) {
-        statusEl.textContent = "Сите полиња мора да бидат пополнети.";
-        statusEl.className = "error";
+        statusEl.textContent = "Сите полиња мора да бидат пополнети!";
+        statusEl.classList.add("error");
         return;
     }
 
     try {
-        statusEl.textContent = "Се објавува...";
-        statusEl.className = "loading";
+        statusEl.textContent = "Објавувам...";
+        statusEl.classList.add("loading");
 
-        const userDoc = await db.collection("users").doc(currentUser.uid).get();
-        const u = userDoc.data();
+        const u = (await db.collection("users").doc(currentUser.uid).get()).data();
 
         await db.collection("threads").add({
             title,
@@ -81,29 +66,21 @@ async function postThread() {
             avatarUrl: u.avatarUrl || "",
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             locked: false,
-            sticky: false,
-            flagged: false
+            sticky: false
         });
 
-        // Clear inputs
-        titleInput.value = "";
-        bodyInput.value = "";
+        statusEl.textContent = "Успешно објавена тема!";
+        statusEl.classList.remove("loading");
+        statusEl.classList.add("success");
 
-        alert("Темата е успешно објавена!");
-        location.href = "forum.html";
+        setTimeout(() => {
+            location.href = "forum.html";
+        }, 600);
 
     } catch (err) {
-        console.error(err);
-        statusEl.textContent = "Грешка при објавување.";
-        statusEl.className = "error";
+        console.error("THREAD ERROR:", err);
+        statusEl.textContent = "Грешка. Обиди се повторно.";
+        statusEl.classList.add("error");
     }
 }
 
-// ─────────────────────────────
-// 🛡 ESCAPE HTML
-// ─────────────────────────────
-function escapeHtml(text) {
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
-}
