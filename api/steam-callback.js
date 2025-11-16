@@ -1,77 +1,71 @@
 // api/steam-callback.js
-const openid = require("openid");
 const admin = require("./firebaseAdmin");
 
-// FIX 1: Explicitly set RETURN URL (како што Steam го прати)
-const RETURN_URL = process.env.STEAM_CALLBACK_URL;
+// Extract SteamID64 from Steam OpenID URL
+function extractSteamId64(claimed) {
+  if (!claimed) return null;
+  return claimed.replace("https://steamcommunity.com/openid/id/", "");
+}
 
-// FIX 2: Always allow GET params (како што Steam ги праќа)
-const relyingParty = new openid.RelyingParty(
-  RETURN_URL,   // return URL
-  null,         // realm
-  true,         // stateless
-  false,        // strict mode OFF (fix for Vercel)
-  []            // extensions
-);
+module.exports = async (req, res) => {
+  try {
+    const params = req.query;
 
-module.exports = (req, res) => {
-  // FIX 3: Convert req.query into normal URL params
-  const params = { ...req.query };
+    // Steam return parameter
+    const claimedId = params["openid.claimed_id"];
 
-  // verifyAssertion бара request object со URL query
-  relyingParty.verifyAssertion({ query: params }, async (err, result) => {
-    if (err || !result || !result.authenticated) {
-      console.error("🚨 Steam verify error:", err, params);
-      return res.status(500).send("Steam verify error.");
+    if (!claimedId) {
+      console.error("❌ No claimed_id from Steam!", params);
+      return res.status(400).send("Missing claimed_id from Steam.");
     }
 
-    try {
-      const claimedId = result.claimedIdentifier;
-      const steamId64 = claimedId.replace(
-        "https://steamcommunity.com/openid/id/",
-        ""
-      );
+    const steamId64 = extractSteamId64(claimedId);
+    if (!steamId64) {
+      console.error("❌ Failed extracting SteamID64!", claimedId);
+      return res.status(400).send("Invalid SteamID.");
+    }
 
-      const uid = `steam:${steamId64}`;
+    const uid = `steam:${steamId64}`;
 
-      const firebaseToken = await admin.auth().createCustomToken(uid, {
-        steamId64
+    // Create Firebase custom token
+    const firebaseToken = await admin.auth().createCustomToken(uid, {
+      steamId64
+    });
+
+    // Firestore
+    const db = admin.firestore();
+    const userRef = db.collection("users").doc(uid);
+    const snap = await userRef.get();
+
+    if (!snap.exists) {
+      await userRef.set({
+        username: `SteamUser-${steamId64.slice(-6)}`,
+        steamId: steamId64,
+        avatarUrl: "",
+        role: "member",
+        banned: false,
+        online: true,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        lastSeen: admin.firestore.FieldValue.serverTimestamp()
       });
-
-      const db = admin.firestore();
-      const userRef = db.collection("users").doc(uid);
-      const snap = await userRef.get();
-
-      if (!snap.exists) {
-        await userRef.set({
-          username: `SteamUser-${steamId64.slice(-6)}`,
-          steamId: steamId64,
-          avatarUrl: "",
-          role: "member",
-          banned: false,
+    } else {
+      await userRef.set(
+        {
           online: true,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
           lastSeen: admin.firestore.FieldValue.serverTimestamp()
-        });
-      } else {
-        await userRef.set(
-          {
-            online: true,
-            lastSeen: admin.firestore.FieldValue.serverTimestamp()
-          },
-          { merge: true }
-        );
-      }
-
-      const redirectUrl =
-        `${process.env.SITE_URL}/main.html?steamToken=${encodeURIComponent(firebaseToken)}`;
-
-      console.log("✔ Redirecting to:", redirectUrl);
-      return res.redirect(302, redirectUrl);
-
-    } catch (e) {
-      console.error("🔥 Internal error:", e);
-      return res.status(500).send("Internal error.");
+        },
+        { merge: true }
+      );
     }
-  });
+
+    const redirectUrl =
+      `${process.env.SITE_URL}/main.html?steamToken=${encodeURIComponent(firebaseToken)}`;
+
+    console.log("✔ Redirecting to:", redirectUrl);
+    return res.redirect(302, redirectUrl);
+
+  } catch (e) {
+    console.error("🔥 ERROR in steam-callback:", e);
+    return res.status(500).send("Internal error.");
+  }
 };
