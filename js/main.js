@@ -13,6 +13,15 @@ const isPreview = localStorage.getItem("maintenancePreview") === "true";
 if (isPreview) localStorage.removeItem("maintenancePreview");
 
 // ─────────────────────────────────────────
+// 🚫 BLOCK REDIRECT WHILE STEAM LOGIN IS IN PROGRESS
+// ─────────────────────────────────────────
+const urlCheck = new URL(window.location.href);
+if (urlCheck.searchParams.get("steamToken")) {
+  console.log("⚡ Steam login token found — blocking redirect...");
+  window.__steamLoginInProgress = true;
+}
+
+// ─────────────────────────────────────────
 // 🎟️ STEAM LOGIN TOKEN HANDLER
 // ─────────────────────────────────────────
 async function handleSteamLogin() {
@@ -23,6 +32,8 @@ async function handleSteamLogin() {
 
   console.log("Steam token detected:", steamToken);
 
+  window.__steamLoginInProgress = true;
+
   try {
     const userCred = await auth.signInWithCustomToken(steamToken);
     const user = userCred.user;
@@ -32,12 +43,16 @@ async function handleSteamLogin() {
       lastSeen: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
+    // Steam login done → allow redirects
+    window.__steamLoginInProgress = false;
+
     url.searchParams.delete("steamToken");
     window.history.replaceState({}, document.title, url.toString());
 
     location.href = "main.html";
 
   } catch (err) {
+    window.__steamLoginInProgress = false;
     console.error("Steam token error:", err);
     alert("Steam login error: " + err.message);
   }
@@ -49,7 +64,13 @@ handleSteamLogin();
 // 🔐 AUTH HANDLER (STEAM FIXED)
 // ─────────────────────────────────────────
 auth.onAuthStateChanged(async user => {
+
+  // 🛑 MAIN FIX — DO NOT REDIRECT WHEN STEAM IS LOGGING IN
   if (!user) {
+    if (window.__steamLoginInProgress) {
+      console.log("⏳ Waiting for Steam login (preventing redirect)...");
+      return;
+    }
     location.href = "index.html";
     return;
   }
@@ -57,7 +78,7 @@ auth.onAuthStateChanged(async user => {
   // ⭐ FIX: Safe check for Steam UID
   const isSteamUser = typeof user.uid === "string" && user.uid.startsWith("steam:");
 
-  // ⭐ FIX: Email users must be verified, Steam users don't have email
+  // ⭐ FIX: Email users must verify email
   if (!isSteamUser && user.email && user.email !== "" && !user.emailVerified) {
     location.href = "index.html";
     return;
