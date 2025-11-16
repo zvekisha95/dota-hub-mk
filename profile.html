@@ -14,146 +14,164 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 950px;
+            width: 93%;
             margin: 40px auto;
             background: rgba(15,23,42,0.95);
-            padding: 20px 30px;
-            border-radius: 16px;
-            border: 1px solid rgba(55,65,81,0.6);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+            padding: 25px 30px;
+            border-radius: 18px;
+            border: 1px solid rgba(55,65,81,0.55);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.55);
+            backdrop-filter: blur(4px);
         }
 
         h1 {
             text-align: center;
             margin-bottom: 30px;
+            font-size: 1.9rem;
         }
 
+        /* PROFILE HEADER */
         .profile-header {
             display: flex;
-            gap: 20px;
+            gap: 22px;
             align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(55,65,81,0.45);
         }
 
         #p_avatar {
-            width: 90px;
-            height: 90px;
+            width: 95px;
+            height: 95px;
             border-radius: 50%;
             background: #334155;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
+            font-size: 2.2rem;
             font-weight: bold;
             color: #fff;
             background-size: cover;
             background-position: center;
+            flex-shrink: 0;
+            border: 2px solid rgba(148,163,184,0.4);
         }
 
         .profile-info div {
             margin-bottom: 8px;
+            font-size: 1rem;
         }
 
         .label {
             color: #9ca3af;
             font-size: 0.85rem;
+            margin-right: 6px;
         }
 
+        /* SECTION TITLE */
         .section-title {
             font-size: 1.4rem;
-            margin-top: 30px;
-            margin-bottom: 10px;
+            margin-top: 35px;
+            margin-bottom: 12px;
             border-bottom: 1px solid rgba(55,65,81,0.6);
             padding-bottom: 5px;
         }
 
-        /* ===================================================
-           DOTA 2 PROFILE PANEL
-        =================================================== */
+        /* ========================
+           DOTA PROFILE PANEL
+        ======================== */
 
         #dotaProfile {
-            margin-top: 25px;
+            margin-top: 20px;
             padding: 20px;
-            background: rgba(30, 41, 59, 0.6);
-            border-radius: 12px;
-            border: 1px solid rgba(148,163,184,0.3);
+            background: rgba(30, 41, 59, 0.55);
+            border-radius: 14px;
+            border: 1px solid rgba(148,163,184,0.25);
         }
 
         .dota-header {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 18px;
         }
 
         .dota-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 10px;
+            width: 82px;
+            height: 82px;
+            border-radius: 12px;
+            border: 1px solid rgba(148,163,184,0.3);
         }
 
         .dota-info-block h2 {
             margin: 0;
-            font-size: 1.4rem;
+            font-size: 1.35rem;
         }
 
         .dota-link {
+            display: inline-block;
             color: #60a5fa;
             text-decoration: none;
-            font-size: 0.9rem;
+            margin-top: 4px;
         }
 
         .dota-grid {
             display: flex;
             gap: 15px;
-            margin-top: 20px;
+            margin-top: 22px;
             flex-wrap: wrap;
         }
 
         .dota-card {
             flex: 1;
             min-width: 180px;
-            padding: 12px;
-            border-radius: 10px;
-            background: rgba(51,65,85,0.6);
-            border: 1px solid rgba(148,163,184,0.2);
+            padding: 14px;
+            border-radius: 12px;
+            background: rgba(51,65,85,0.55);
+            border: 1px solid rgba(148,163,184,0.25);
         }
 
         .dota-card h3 {
             margin-top: 0;
+            font-size: 1.1rem;
         }
 
         .dota-rank {
-            width: 70px;
+            width: 75px;
             margin-top: 8px;
         }
 
         .recent-title {
-            margin-top: 25px;
+            margin-top: 28px;
+            margin-bottom: 12px;
+            font-size: 1.2rem;
         }
 
         .recent-matches .match-row {
             display: flex;
             justify-content: space-between;
-            padding: 8px 12px;
-            margin-top: 5px;
-            background: rgba(51,65,85,0.5);
-            border-radius: 6px;
-            border: 1px solid rgba(148,163,184,0.2);
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            background: rgba(51,65,85,0.45);
+            border-radius: 8px;
+            border: 1px solid rgba(148,163,184,0.25);
+            font-size: 0.95rem;
         }
 
-        /* ===================================================
+        /* ========================
            THREADS & COMMENTS
-        =================================================== */
+        ======================== */
 
         .item, .comment-item {
-            background: rgba(34,197,94,0.10);
-            padding: 10px 14px;
+            background: rgba(34,197,94,0.12);
+            padding: 12px 14px;
             border-radius: 10px;
             margin-bottom: 8px;
+            border: 1px solid rgba(34,197,94,0.22);
         }
 
         .item-title, .cm-thread {
             color: #60a5fa;
-            font-weight: bold;
+            font-weight: 600;
             text-decoration: none;
         }
 
@@ -169,7 +187,7 @@
         }
 
         .loading {
-            color: #60a5fa;
+            color: #38bdf8;
         }
 
         .error {
@@ -177,16 +195,30 @@
             font-weight: bold;
         }
 
+        /* BACK LINK */
         a.back {
             display: inline-block;
-            margin-top: 20px;
+            margin-top: 25px;
             color: #22c55e;
             font-weight: bold;
             text-decoration: none;
+            font-size: 1rem;
         }
 
         a.back:hover {
             text-decoration: underline;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 600px) {
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            .dota-header {
+                flex-direction: column;
+                text-align: center;
+            }
         }
     </style>
 </head>
