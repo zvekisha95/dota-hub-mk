@@ -6,31 +6,43 @@ let currentUser = null;
 let userRole = "member";
 
 // ─────────────────────────────
-// 🚪 Проверка дали е логирани
+// 🚪 LOGIN + STEAM FIX
 // ─────────────────────────────
 auth.onAuthStateChanged(async user => {
-    if (!user || !user.emailVerified) {
+    if (!user) {
+        location.href = "index.html";
+        return;
+    }
+
+    // Allow Steam users (uids start with "steam:")
+    const isSteamUser =
+        user && typeof user.uid === "string" && user.uid.startsWith("steam:");
+
+    // Email/password users → must verify
+    if (!isSteamUser && user.email && !user.emailVerified) {
+        alert("Мораш да го верификуваш email-от.");
         location.href = "index.html";
         return;
     }
 
     currentUser = user;
 
-    // Вчитај податоци за корисникот
+    // Load user Firestore data
     const doc = await db.collection("users").doc(user.uid).get();
     const data = doc.exists ? doc.data() : {};
 
-    // banned?
+    // Banned check
     if (data.banned === true) {
-        alert("Ти си баниран од креирање теми.");
+        alert("Ти си баниран и не можеш да креираш теми.");
         location.href = "forum.html";
         return;
     }
 
     userRole = data.role || "member";
 
-    document.getElementById("authorName").textContent =
-        data.username || user.email;
+    // Show author name on page
+    const nameEl = document.getElementById("authorName");
+    if (nameEl) nameEl.textContent = data.username || user.email || "Корисник";
 });
 
 // ─────────────────────────────
@@ -38,11 +50,15 @@ auth.onAuthStateChanged(async user => {
 // ─────────────────────────────
 async function postThread() {
 
-    const title = document.getElementById("threadTitle").value.trim();
-    const body = document.getElementById("threadBody").value.trim();
+    const titleInput = document.getElementById("threadTitle");
+    const bodyInput = document.getElementById("threadBody");
     const statusEl = document.getElementById("postStatus");
 
+    const title = titleInput.value.trim();
+    const body = bodyInput.value.trim();
+
     statusEl.textContent = "";
+    statusEl.className = "";
 
     if (!title || !body) {
         statusEl.textContent = "Сите полиња мора да бидат пополнети.";
@@ -69,11 +85,10 @@ async function postThread() {
             flagged: false
         });
 
-        // чистење
-        document.getElementById("threadTitle").value = "";
-        document.getElementById("threadBody").value = "";
+        // Clear inputs
+        titleInput.value = "";
+        bodyInput.value = "";
 
-        // redirect
         alert("Темата е успешно објавена!");
         location.href = "forum.html";
 
@@ -85,7 +100,7 @@ async function postThread() {
 }
 
 // ─────────────────────────────
-// 🧼 ESCAPE HTML — анти XSS
+// 🛡 ESCAPE HTML
 // ─────────────────────────────
 function escapeHtml(text) {
     const div = document.createElement("div");
