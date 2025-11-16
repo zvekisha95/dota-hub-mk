@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+    <meta charset="UTF-8">
+    <title>Zvekisha Hub – Moderator Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            background: #0f172a;
+            color: #e5e7eb;
+            font-family: system-ui, sans-serif;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .section {
+            background: rgba(30,41,59,0.8);
+            padding: 20px;
+            border-radius: 14px;
+            border: 1px solid #334155;
+            margin-bottom: 30px;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #60a5fa;
+        }
+        .item-row {
+            background: rgba(15,23,42,0.6);
+            border: 1px solid #334155;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+        }
+        .item-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .item-meta {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+        .actions button {
+            margin-right: 10px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-approve { background: #22c55e; color: #000; }
+        .btn-delete { background: #ef4444; color: white; }
+        .btn-approve:hover { background: #16a34a; }
+        .btn-delete:hover { background: #dc2626; }
+        .empty {
+            color: #9ca3af;
+            font-style: italic;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Moderator Dashboard</h1>
+
+<!-- FLAGGED COMMENTS -->
+<div class="section">
+    <h2>Флегирани коментари</h2>
+    <div id="flaggedComments">Вчитувам...</div>
+</div>
+
+<!-- FLAGGED THREADS -->
+<div class="section">
+    <h2>Флегирани теми</h2>
+    <div id="flaggedThreads">Вчитувам...</div>
+</div>
+
+<!-- FIREBASE + JS -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/mod-dashboard.js"></script>
+
+</body>
+</html>

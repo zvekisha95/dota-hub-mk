@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+    <meta charset="UTF-8">
+    <title>Zvekisha Dota Hub – Admin Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            background: #0f172a;
+            color: #e5e7eb;
+            font-family: system-ui, sans-serif;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .section {
+            background: rgba(30,41,59,0.8);
+            padding: 20px;
+            border-radius: 14px;
+            border: 1px solid #334155;
+            margin-bottom: 30px;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #60a5fa;
+        }
+        .user-row {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(15,23,42,0.6);
+            border: 1px solid #334155;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+        }
+        .user-main { width: 65%; }
+        .user-name { font-size: 1.2rem; font-weight: 600; }
+        .user-email { color: #9ca3af; }
+        .user-meta { font-size: 0.85rem; color: #94a3b8; margin-top: 4px; }
+
+        .user-actions select, 
+        .user-actions button {
+            margin-left: 10px;
+            padding: 8px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+        }
+        .user-actions button {
+            background: #ef4444;
+            color: white;
+            font-weight: 600;
+        }
+        .user-actions button:hover {
+            background: #dc2626;
+        }
+        .tag { padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; }
+        .tag-ok { background: #22c55e; color:#000; }
+        .tag-banned { background: #ef4444; }
+
+        .small-btn {
+            background: #22c55e;
+            color: #000;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+        .small-btn:hover {
+            background: #16a34a;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 90px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        #maintStatus {
+            margin-top: 8px;
+            font-size: 0.9rem;
+            color: #93c5fd;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Админ Панел – Zvekisha Dota Hub</h1>
+
+<!-- USERS SECTION -->
+<div class="section">
+    <h2>Корисници</h2>
+    <div id="userList">Вчитувам...</div>
+</div>
+
+<!-- MAINTENANCE MODE -->
+<div class="section">
+    <h2>Одржување (Maintenance)</h2>
+
+    <label>
+        <input type="checkbox" id="maintEnabled"> Вклучи Maintenance Mode
+    </label>
+    <br><br>
+
+    <label>Порака за корисниците:</label>
+    <textarea id="maintMessage" placeholder="Пример: Сајтот е во одржување..."></textarea>
+
+    <button class="small-btn" onclick="saveMaintenanceConfig()">Зачувај</button>
+    <button class="small-btn" onclick="previewMaintenance()">Preview</button>
+
+    <div id="maintStatus"></div>
+</div>
+
+<!-- FIREBASE + JS -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/admin.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+  <meta charset="UTF-8">
+  <title>Zvekisha Dota Hub – Главна</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* --- ТВОЈОТ CSS Е НЕТАКНАТ --- */
+    :root {
+      --bg: radial-gradient(circle at top, #1e293b 0, #020617 55%, #000 100%);
+      --card: rgba(15,23,42,0.95);
+      --border: rgba(55,65,81,0.6);
+      --accent: #22c55e;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --maint-blue: #60a5fa;
+      --maint-gray: #d1d5db;
+      --online: #22c55e;
+      --offline: #ef4444;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; min-height: 100vh; }
+    .wrapper { max-width: 1100px; margin: 0 auto; padding: 20px; position:relative; }
+    .hero { text-align: center; padding: 60px 20px; background: linear-gradient(135deg, rgba(34,197,94,0.15), transparent); border-radius: 20px; margin-bottom: 30px; border: 1px solid var(--border); position:relative; }
+    .hero h1 { font-size: 2.8rem; margin-bottom: 12px; }
+    .hero p { font-size: 1.1rem; color: var(--muted); }
+    .stats { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+    .stat { background: rgba(34,197,94,0.15); padding: 8px 14px; border-radius: 12px; font-size: 0.9rem; }
+    .grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .card { background: var(--card); padding: 20px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 8px 25px rgba(0,0,0,0.5); transition: transform 0.2s; }
+    .card:hover { transform: translateY(-4px); }
+    .card h3 { margin-bottom: 12px; font-size: 1.3rem; }
+    .card a { color: #60a5fa; text-decoration: none; font-weight: 600; }
+    .card a:hover { text-decoration: underline; }
+    .live-match { background: rgba(34,197,94,0.15); padding: 12px; border-radius: 10px; margin-bottom: 8px; font-size: 0.9rem; }
+    .live-hero { font-weight: 700; color: #22c55e; }
+    .live-kda { color: #fbbf24; }
+    .live { color: #22c55e; font-weight: 600; }
+    .watch-btn {
+      display: inline-block; margin-top: 6px; padding: 6px 10px;
+      background: #22c55e; color: #020617; border-radius: 999px;
+      font-size: 0.8rem; font-weight: 600; text-decoration: none;
+    }
+    .watch-btn:hover { background: #16a34a; }
+    .refresh-info { font-size: 0.75rem; color: #9ca3af; text-align: right; margin-top: 8px; }
+    .online-users { font-size: 0.9rem; color: #22c55e; font-weight: 600; }
+    .footer { text-align: center; padding: 30px; color: var(--muted); font-size: 0.9rem; margin-top: 40px; }
+    .avatar {
+      width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #000; background-size: cover; background-position: center;
+    }
+    .user-info { text-align: center; margin: 10px 0; font-size: 0.9rem; color: #9ca3af; }
+    .user-flag { text-align: center; margin: 5px 0; font-size: 0.9rem; color: #e5e7eb; }
+    .maintenance-screen {
+      text-align: center;
+      padding: 100px 20px;
+      font-family: system-ui, sans-serif;
+      color: #e5e7eb;
+    }
+    .maintenance-screen h1 {
+      font-size: 3rem;
+      margin-bottom: 20px;
+      color: var(--maint-blue);
+    }
+    .maintenance-screen p {
+      font-size: 1.3rem;
+      max-width: 600px;
+      margin: 0 auto 30px;
+      color: var(--maint-gray);
+    }
+    .maintenance-screen .btn-back {
+      padding: 12px 24px;
+      background: #22c55e;
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    .maintenance-screen .note {
+      font-size: 1rem;
+      color: var(--maint-blue);
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="wrapper">
+  <div class="hero">
+    <h1>Добредојде, <span id="userName">...</span>!</h1>
+    <p>Надградба: 15.11.2025 06:34 PM CET</p>
+    <div style="position:absolute; top:20px; right:20px; display:flex; align-items:center; gap:10px;">
+      <div class="avatar" id="userAvatar">U</div>
+    </div>
+  </div>
+
+  <div class="user-info">
+    <span id="currentTime">Loading...</span> | 
+    <span id="userCountry">??</span>
+  </div>
+
+  <div class="user-flag">
+    <img id="countryFlag" src="https://flagcdn.com/16x12/un.png" alt="??">
+    <span id="countryName">Непозната</span>
+  </div>
+
+  <div class="stats">
+    <div class="stat">Членови: <span id="memberCount">0</span></div>
+    <div class="stat">Теми: <span id="threadCount">0</span></div>
+    <div class="stat">Коментари: <span id="commentCount">0</span></div>
+    <div class="stat">Онлајн: <span id="onlineCount" class="online-users">0</span></div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Форум</h3>
+      <p>Погледни ги последните теми и дискусии.</p>
+      <a href="forum.html">Оди на форум</a>
+    </div>
+    <div class="card">
+      <h3>Креирај тема</h3>
+      <p>Сподели мислење, меме или стратегија.</p>
+      <a href="new-thread.html">Нова тема</a>
+    </div>
+    <div class="card">
+      <h3>Мој профил</h3>
+      <p>Твоите теми, коментари, MMR.</p>
+      <a href="#" id="profileLink">Мојот профил</a>
+    </div>
+    <div class="card">
+      <h3>Live мечеви</h3>
+      <div id="liveMatches">Никој не игра моментално.</div>
+      <div class="refresh-info">Ажурирано на секои 15 секунди</div>
+    </div>
+    <div class="card" id="modPanel" style="display:none;">
+      <h3>Модерација</h3>
+      <p>Flagged, ban, sticky, lock.</p>
+      <a href="dashboard.html">Moderator Dashboard</a>
+    </div>
+    <div class="card" id="adminPanel" style="display:none;">
+      <h3>Админ</h3>
+      <p>Управувај со корисници и систем.</p>
+      <a href="admin.html">Admin Panel</a>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  Zvekisha Dota Hub © 2025 | Само за членови | Код: ZVEKISH322
+</div>
+
+<!-- FIREBASE + JS -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+<script src="js/firebase-config.js"></script>
+<script src="js/main.js"></script>
+
+</body>
+</html>
