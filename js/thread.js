@@ -26,6 +26,7 @@ auth.onAuthStateChanged(async user => {
     const provider = user.providerData[0]?.providerId || "custom";
     const isSteam = provider === "custom" || user.uid.startsWith("steam:");
 
+    // Email users must verify
     if (!isSteam && !user.emailVerified) {
         alert("Прво потврди го email-от.");
         location.href = "index.html";
@@ -36,6 +37,14 @@ auth.onAuthStateChanged(async user => {
 
     const doc = await db.collection("users").doc(user.uid).get();
     const data = doc.exists ? doc.data() : {};
+
+    // banned?
+    if (data.banned === true) {
+        alert("Ти си баниран од форумот.");
+        location.href = "main.html";
+        return;
+    }
+
     userRole = data.role || "member";
 
     threadId = getThreadId();
@@ -68,31 +77,24 @@ async function loadThread() {
 
     const t = doc.data();
 
-    // Thread LOCKED?
+    // LOCK?
     threadLocked = t.locked === true;
     if (threadLocked && lockedEl) lockedEl.style.display = "block";
 
-    const authorName = escapeHtml(
-        t.author ||
-        t.authorName ||
-        t.username ||
-        "Непознат"
-    );
+    const authorName = escapeHtml(t.author || "Непознат");
 
-    // Display content
     if (titleEl) titleEl.textContent = escapeHtml(t.title || "Без наслов");
     if (bodyEl) bodyEl.innerHTML = convertLinks(escapeHtml(t.body || ""));
-    if (authorEl) authorEl.textContent = authorName;
+    if (authorEl) authorEl.innerHTML = `<a href="profile.html?id=${t.authorId}" class="profile-link">${authorName}</a>`;
     if (timeEl) timeEl.textContent = t.createdAt?.toDate?.().toLocaleString("mk-MK") || "??";
 
+    // Avatar
     if (avatarEl) {
         if (t.avatarUrl) {
             avatarEl.style.backgroundImage = `url('${t.avatarUrl}')`;
-            avatarEl.style.backgroundSize = "cover";
-            avatarEl.style.backgroundPosition = "center";
             avatarEl.textContent = "";
         } else {
-            avatarEl.style.background = `hsl(${authorName.charCodeAt(0) * 8 % 360},70%,55%)`;
+            avatarEl.style.background = "#1f2937";
             avatarEl.textContent = authorName.charAt(0).toUpperCase();
         }
     }
@@ -125,14 +127,9 @@ async function loadComments() {
             const c = doc.data();
             const id = doc.id;
 
-            const authorName = escapeHtml(
-                c.author ||
-                c.authorName ||
-                "???"
-            );
-
-            const text = escapeHtml(c.text || "");
+            const author = escapeHtml(c.author || "Непознат");
             const avatar = c.avatarUrl || "";
+            const text = escapeHtml(c.text || "");
             const time = c.createdAt?.toDate?.().toLocaleString("mk-MK") || "??";
 
             const isAuthor = currentUser.uid === c.authorId;
@@ -140,14 +137,14 @@ async function loadComments() {
 
             const html = `
                 <div class="comment">
-                    <div class="c-avatar"
-                        style="${avatar ? `background-image:url('${avatar}')` : ""}">
-                        ${!avatar ? authorName.charAt(0).toUpperCase() : ""}
+                    <div class="c-avatar" style="${avatar ? `background-image:url('${avatar}')` : ""}">
+                        ${!avatar ? author.charAt(0).toUpperCase() : ""}
                     </div>
 
                     <div class="c-body">
+
                         <div class="c-header">
-                            <span class="c-author">${authorName}</span>
+                            <a href="profile.html?id=${c.authorId}" class="c-author">${author}</a>
                             <span class="c-time">${time}</span>
                         </div>
 
@@ -162,7 +159,7 @@ async function loadComments() {
                             ` : ""}
 
                             ${(isMod && !isAuthor) ? `
-                                <button class="mod-del" onclick="deleteComment('${id}')">MOD Delete</button>
+                                <button class="mod-del" onclick="deleteComment('${id}')">MOD Бришење</button>
                             ` : ""}
                         </div>
                     </div>
@@ -183,25 +180,30 @@ async function loadComments() {
 // ─────────────────────────────
 async function addComment() {
     if (threadLocked) {
-        alert("Темата е заклучена. Не можеш да коментираш.");
+        alert("Темата е заклучена.");
         return;
     }
 
     const input = document.getElementById("commentInput");
     const text = input.value.trim();
-
     if (!text) return alert("Внеси коментар.");
 
     const userDoc = await db.collection("users").doc(currentUser.uid).get();
-    const u = userDoc.data();
+    const u = userDoc.exists ? userDoc.data() : {};
+
+    const usernameSafe =
+        u.username ||
+        u.displayName ||
+        currentUser.displayName ||
+        "Unknown";
 
     try {
         await db.collection("threads")
             .doc(threadId)
             .collection("comments")
             .add({
-                text,
-                author: u.username || currentUser.email,
+                text: text,
+                author: usernameSafe,
                 authorId: currentUser.uid,
                 avatarUrl: u.avatarUrl || "",
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -213,7 +215,7 @@ async function addComment() {
         loadComments();
 
     } catch (err) {
-        console.error(err);
+        console.error("Comment error:", err);
         alert("Грешка при коментирање.");
     }
 }
@@ -262,7 +264,7 @@ async function editComment(id, oldText) {
 // ❌ DELETE COMMENT
 // ─────────────────────────────
 async function deleteComment(id) {
-    if (!confirm("Дали сигурно сакаш да избришеш коментар?")) return;
+    if (!confirm("Дали сигурно?")) return;
 
     try {
         await db.collection("threads")
@@ -279,7 +281,7 @@ async function deleteComment(id) {
 }
 
 // ─────────────────────────────
-// 🛡 ESCAPE HTML
+// ESCAPES
 // ─────────────────────────────
 function escapeHtml(t) {
     const d = document.createElement("div");
@@ -287,19 +289,10 @@ function escapeHtml(t) {
     return d.innerHTML;
 }
 
-// ─────────────────────────────
-// 🛡 ESCAPE JS FOR PROMPT()
-// ─────────────────────────────
 function escapeJs(t) {
-    return t
-        .replace(/\\/g, "\\\\")
-        .replace(/"/g, '\\"')
-        .replace(/'/g, "\\'");
+    return t.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/'/g, "\\'");
 }
 
-// ─────────────────────────────
-// 🔗 MAP LINKS
-// ─────────────────────────────
 function convertLinks(text) {
     return text.replace(
         /(https?:\/\/[^\s]+)/g,
