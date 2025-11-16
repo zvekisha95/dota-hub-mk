@@ -1,14 +1,13 @@
 // ─────────────────────────────
 // 🔥 INIT
-// auth, db доаѓаат од firebase-config.js
 // ─────────────────────────────
-
 let currentUser = null;
 let userRole = "member";
 let threadId = null;
+let threadLocked = false;
 
 // ─────────────────────────────
-// 🧩 Земи ID од URL
+// 🧩 GET THREAD ID
 // ─────────────────────────────
 function getThreadId() {
     const params = new URLSearchParams(window.location.search);
@@ -16,10 +15,19 @@ function getThreadId() {
 }
 
 // ─────────────────────────────
-// ⛔ ПРОВЕРКА ЗА LOGIN
+// ⛔ LOGIN + STEAM FIX
 // ─────────────────────────────
 auth.onAuthStateChanged(async user => {
-    if (!user || !user.emailVerified) {
+    if (!user) {
+        location.href = "index.html";
+        return;
+    }
+
+    const provider = user.providerData[0]?.providerId || "custom";
+    const isSteam = provider === "custom" || user.uid.startsWith("steam:");
+
+    if (!isSteam && !user.emailVerified) {
+        alert("Прво потврди го email-от.");
         location.href = "index.html";
         return;
     }
@@ -37,45 +45,56 @@ auth.onAuthStateChanged(async user => {
         return;
     }
 
-    loadThread();
-    loadComments();
+    await loadThread();
+    await loadComments();
 });
 
 // ─────────────────────────────
 // 📌 LOAD THREAD
 // ─────────────────────────────
 async function loadThread() {
+    const doc = await db.collection("threads").doc(threadId).get();
     const titleEl = document.getElementById("threadTitle");
     const bodyEl = document.getElementById("threadBody");
     const authorEl = document.getElementById("threadAuthor");
     const timeEl = document.getElementById("threadTime");
     const avatarEl = document.getElementById("threadAvatar");
-
-    const doc = await db.collection("threads").doc(threadId).get();
+    const lockedEl = document.getElementById("lockedBanner");
 
     if (!doc.exists) {
-        titleEl.textContent = "Тема не постои.";
+        if (titleEl) titleEl.textContent = "Тема не постои.";
         return;
     }
 
     const t = doc.data();
 
-    const title = escapeHtml(t.title || "Без наслов");
-    const body = escapeHtml(t.body || "");
-    const author = escapeHtml(t.author || "Непознат");
-    const avatar = t.avatarUrl || "";
-    const time = t.createdAt?.toDate?.().toLocaleString("mk-MK") || "??";
+    // Thread LOCKED?
+    threadLocked = t.locked === true;
+    if (threadLocked && lockedEl) lockedEl.style.display = "block";
 
-    titleEl.textContent = title;
-    bodyEl.innerHTML = convertLinks(body);
-    authorEl.textContent = author;
-    timeEl.textContent = time;
+    const authorName = escapeHtml(
+        t.author ||
+        t.authorName ||
+        t.username ||
+        "Непознат"
+    );
 
-    if (avatar) {
-        avatarEl.style.backgroundImage = `url('${avatar}')`;
-        avatarEl.textContent = "";
-    } else {
-        avatarEl.textContent = author.charAt(0).toUpperCase();
+    // Display content
+    if (titleEl) titleEl.textContent = escapeHtml(t.title || "Без наслов");
+    if (bodyEl) bodyEl.innerHTML = convertLinks(escapeHtml(t.body || ""));
+    if (authorEl) authorEl.textContent = authorName;
+    if (timeEl) timeEl.textContent = t.createdAt?.toDate?.().toLocaleString("mk-MK") || "??";
+
+    if (avatarEl) {
+        if (t.avatarUrl) {
+            avatarEl.style.backgroundImage = `url('${t.avatarUrl}')`;
+            avatarEl.style.backgroundSize = "cover";
+            avatarEl.style.backgroundPosition = "center";
+            avatarEl.textContent = "";
+        } else {
+            avatarEl.style.background = `hsl(${authorName.charCodeAt(0) * 8 % 360},70%,55%)`;
+            avatarEl.textContent = authorName.charAt(0).toUpperCase();
+        }
     }
 }
 
@@ -84,6 +103,8 @@ async function loadThread() {
 // ─────────────────────────────
 async function loadComments() {
     const list = document.getElementById("commentList");
+    if (!list) return;
+
     list.innerHTML = `<div class="loading">Вчитувам...</div>`;
 
     try {
@@ -104,41 +125,43 @@ async function loadComments() {
             const c = doc.data();
             const id = doc.id;
 
+            const authorName = escapeHtml(
+                c.author ||
+                c.authorName ||
+                "???"
+            );
+
             const text = escapeHtml(c.text || "");
-            const author = escapeHtml(c.author || "???");
             const avatar = c.avatarUrl || "";
             const time = c.createdAt?.toDate?.().toLocaleString("mk-MK") || "??";
 
-            // ДАЛИ МОЖЕ EDIT/DELETE?
             const isAuthor = currentUser.uid === c.authorId;
             const isMod = userRole === "admin" || userRole === "moderator";
 
             const html = `
                 <div class="comment">
                     <div class="c-avatar"
-                         style="${avatar ? `background-image:url('${avatar}')` : ""}">
-                        ${!avatar ? author.charAt(0).toUpperCase() : ""}
+                        style="${avatar ? `background-image:url('${avatar}')` : ""}">
+                        ${!avatar ? authorName.charAt(0).toUpperCase() : ""}
                     </div>
 
                     <div class="c-body">
                         <div class="c-header">
-                            <span class="c-author">${author}</span>
+                            <span class="c-author">${authorName}</span>
                             <span class="c-time">${time}</span>
                         </div>
 
                         <div class="c-text">${convertLinks(text)}</div>
 
                         <div class="c-actions">
-                            <button class="flag-btn" onclick="flagComment('${id}')">
-                                🚩 Пријави
-                            </button>
+                            <button class="flag-btn" onclick="flagComment('${id}')">🚩 Пријави</button>
 
-                            ${isAuthor ? `
+                            ${(!threadLocked && isAuthor) ? `
                                 <button class="edit-btn" onclick="editComment('${id}', '${escapeJs(text)}')">Уреди</button>
                                 <button class="del-btn" onclick="deleteComment('${id}')">Избриши</button>
                             ` : ""}
 
-                            ${isMod && !isAuthor ? `
+                            ${(isMod && !isAuthor) ? `
                                 <button class="mod-del" onclick="deleteComment('${id}')">MOD Delete</button>
                             ` : ""}
                         </div>
@@ -159,6 +182,11 @@ async function loadComments() {
 // ➕ ADD COMMENT
 // ─────────────────────────────
 async function addComment() {
+    if (threadLocked) {
+        alert("Темата е заклучена. Не можеш да коментираш.");
+        return;
+    }
+
     const input = document.getElementById("commentInput");
     const text = input.value.trim();
 
@@ -195,15 +223,14 @@ async function addComment() {
 // ─────────────────────────────
 async function flagComment(id) {
     try {
-        const ref = db.collection("threads")
+        await db.collection("threads")
             .doc(threadId)
             .collection("comments")
-            .doc(id);
-
-        await ref.update({
-            flagged: true,
-            flaggedBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-        });
+            .doc(id)
+            .update({
+                flagged: true,
+                flaggedBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+            });
 
         alert("Коментарот е пријавен.");
     } catch {
@@ -212,7 +239,7 @@ async function flagComment(id) {
 }
 
 // ─────────────────────────────
-// ✏️ EDIT COMMENT (AUTHOR ONLY)
+// ✏️ EDIT COMMENT
 // ─────────────────────────────
 async function editComment(id, oldText) {
     const newText = prompt("Уреди го коментарот:", oldText);
@@ -223,9 +250,7 @@ async function editComment(id, oldText) {
             .doc(threadId)
             .collection("comments")
             .doc(id)
-            .update({
-                text: newText
-            });
+            .update({ text: newText });
 
         loadComments();
     } catch {
@@ -263,14 +288,17 @@ function escapeHtml(t) {
 }
 
 // ─────────────────────────────
-// 🛡 ESCAPE за JS string во prompt()
+// 🛡 ESCAPE JS FOR PROMPT()
 // ─────────────────────────────
 function escapeJs(t) {
-    return t.replace(/"/g, '&quot;').replace(/'/g, "\\'");
+    return t
+        .replace(/\\/g, "\\\\")
+        .replace(/"/g, '\\"')
+        .replace(/'/g, "\\'");
 }
 
 // ─────────────────────────────
-// 🔗 АВТОМАПАЊЕ LINKОВИ
+// 🔗 MAP LINKS
 // ─────────────────────────────
 function convertLinks(text) {
     return text.replace(
