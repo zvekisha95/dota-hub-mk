@@ -1,30 +1,24 @@
+
 // ─────────────────────────────
 // 🔥 INIT DATA
+// (auth, db веќе ти се од firebase-config.js)
 // ─────────────────────────────
 
 let currentUser = null;
 let userRole = "member";
 
 // ─────────────────────────────
-// ⛔ LOGIN + STEAM FIX
+// ⛔ REDIRECT ако не си логирани
 // ─────────────────────────────
 auth.onAuthStateChanged(async user => {
-    if (!user) {
-        location.href = "index.html";
-        return;
-    }
-
-    const provider = user.providerData[0]?.providerId || "custom";
-    const isSteam = provider === "custom" || user.uid.startsWith("steam:");
-
-    if (!isSteam && !user.emailVerified) {
-        alert("Мораш да ја верификуваш емаил адресата.");
+    if (!user || !user.emailVerified) {
         location.href = "index.html";
         return;
     }
 
     currentUser = user;
 
+    // Вчитај податоци од Firestore
     const doc = await db.collection("users").doc(user.uid).get();
     const data = doc.exists ? doc.data() : {};
 
@@ -34,101 +28,59 @@ auth.onAuthStateChanged(async user => {
 });
 
 // ─────────────────────────────
-// 📌 LOAD THREADS LIST
+// 📌 LOAD THREADS
 // ─────────────────────────────
 async function loadThreads() {
     const list = document.getElementById("threadList");
     list.innerHTML = `<div class="loading">Вчитувам...</div>`;
 
     try {
-        const snap = await db.collection("threads").get();
+        const snap = await db.collection("threads")
+            .orderBy("createdAt", "desc")
+            .get();
 
         if (snap.empty) {
             list.innerHTML = `<p class="empty">Нема теми за прикажување.</p>`;
             return;
         }
 
-        // Separate sticky first
-        const sticky = [];
-        const normal = [];
-
-        snap.forEach(doc => {
-            const data = doc.data();
-            if (data.sticky === true) sticky.push({ id: doc.id, data });
-            else normal.push({ id: doc.id, data });
-        });
-
-        // Sort sticky by date DESC
-        sticky.sort((a, b) => {
-            const A = a.data.createdAt?.toDate?.() || 0;
-            const B = b.data.createdAt?.toDate?.() || 0;
-            return B - A;
-        });
-
-        // Sort normal by date DESC
-        normal.sort((a, b) => {
-            const A = a.data.createdAt?.toDate?.() || 0;
-            const B = b.data.createdAt?.toDate?.() || 0;
-            return B - A;
-        });
-
-        // Final list
-        const threads = [...sticky, ...normal];
-
         list.innerHTML = "";
 
-        for (const t of threads) {
-            const thread = t.data;
-            const id = t.id;
+        for (const doc of snap.docs) {
+            const thread = doc.data();
+            const id = doc.id;
 
             const title = escapeHtml(thread.title || "Без наслов");
-
-            const authorName = escapeHtml(
-                thread.author ||
-                thread.authorName ||
-                thread.username ||
-                "Непознат"
-            );
-
+            const author = escapeHtml(thread.author || "Непознат");
             const avatar = thread.avatarUrl || "";
             const time = thread.createdAt?.toDate?.().toLocaleString("mk-MK") || "??";
-            const isSticky = thread.sticky === true;
-            const isLocked = thread.locked === true;
-
-            const commentCount = await getCommentCount(id);
+            const comments = await getCommentCount(id);
 
             const canModerate = userRole === "admin" || userRole === "moderator";
 
             const html = `
-                <div class="thread-card ${isSticky ? "sticky-thread" : ""}">
-
+                <div class="thread-card">
                     <div class="thread-header">
-                        ${isSticky ? `<span class="tag-sticky">📌 Sticky</span>` : ""}
-                        ${isLocked ? `<span class="tag-locked">🔒 Locked</span>` : ""}
-
-                        <a href="thread.html?id=${id}" class="thread-title">
-                            ${title}
-                        </a>
+                        <a href="thread.html?id=${id}" class="thread-title">${title}</a>
                     </div>
 
                     <div class="thread-info">
                         <div class="author">
-                            <div class="avatar" style="${avatar ? `background-image:url('${avatar}')` : ""}">
-                                ${!avatar ? authorName.charAt(0).toUpperCase() : ""}
+                            <div class="avatar"
+                                 style="${avatar ? `background-image:url('${avatar}')` : ""}">
+                                ${!avatar ? author.charAt(0).toUpperCase() : ""}
                             </div>
-                            <span>${authorName}</span>
+                            <span>${author}</span>
                         </div>
 
                         <div class="meta">
-                            <span>${time}</span> •
-                            <span>${commentCount} коментари</span>
+                            <span>${time}</span> • 
+                            <span>${comments} коментари</span>
                         </div>
                     </div>
 
                     ${canModerate ? `
-                        <div class="mod-tools">
-                            <button onclick="deleteThread('${id}')" class="btn-delete">Избриши</button>
-                        </div>
+                        <button onclick="deleteThread('${id}')" class="btn-delete">Избриши</button>
                     ` : ""}
                 </div>
             `;
@@ -143,7 +95,7 @@ async function loadThreads() {
 }
 
 // ─────────────────────────────
-// 💬 COUNT COMMENTS (FAST)
+// 💬 БРОЈАЧ НА КОМЕНТАРИ
 // ─────────────────────────────
 async function getCommentCount(threadId) {
     try {
@@ -151,7 +103,6 @@ async function getCommentCount(threadId) {
             .doc(threadId)
             .collection("comments")
             .get();
-
         return snap.size;
     } catch {
         return 0;
@@ -159,7 +110,7 @@ async function getCommentCount(threadId) {
 }
 
 // ─────────────────────────────
-// ❌ DELETE THREAD (ADMIN/MOD)
+// ❌ DELETE THREAD (MOD/ADMIN)
 // ─────────────────────────────
 async function deleteThread(id) {
     if (!confirm("Дали сигурно сакаш да ја избришеш темата?"))
@@ -167,7 +118,7 @@ async function deleteThread(id) {
 
     try {
         await db.collection("threads").doc(id).delete();
-        alert("Темата е избришана.");
+        alert("Тема е избришана.");
         loadThreads();
     } catch (err) {
         console.error(err);
@@ -176,7 +127,7 @@ async function deleteThread(id) {
 }
 
 // ─────────────────────────────
-// 🛡️ SAFE HTML
+// 🛡️ SANITIZE HTML
 // ─────────────────────────────
 function escapeHtml(text) {
     const div = document.createElement("div");
