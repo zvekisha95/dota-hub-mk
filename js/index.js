@@ -27,40 +27,43 @@ function escapeHtml(text) {
 }
 
 ///////////////////////////////////////////////////////
-// CLEAN STEAM TOKEN FROM URL (ONLY IN INDEX)
+// CLEAN STEAM TOKEN FROM URL
 ///////////////////////////////////////////////////////
 let hasSteamToken = false;
 (function cleanSteamToken() {
   const url = new URL(window.location.href);
+
   if (url.searchParams.get("steamToken")) {
-    hasSteamToken = true; // important!
+    hasSteamToken = true;
     url.searchParams.delete("steamToken");
     window.history.replaceState({}, document.title, url.toString());
   }
 })();
 
 ///////////////////////////////////////////////////////
-// AUTH FIX — RUN ONLY IF NO STEAM TOKEN
+// AUTH ON START (Steam-friendly)
 ///////////////////////////////////////////////////////
 if (!hasSteamToken) {
   auth.onAuthStateChanged(async user => {
     if (!user) return;
 
-    // allow steam users without email
-    const isSteam = user.uid.startsWith("steam:");
+    const provider = user.providerData[0]?.providerId || "custom";
+    const isSteam = provider === "custom" || user.uid.startsWith("steam:");
 
-    if (!isSteam && user.email && !user.emailVerified) return;
+    // EMAIL USERS → must verify
+    if (!isSteam && !user.emailVerified) return;
 
-    // if already logged → go to main
+    // If successfully logged → redirect
     window.location.href = "main.html";
   });
 }
 
 ///////////////////////////////////////////////////////
-// CLUB GATE
+// CLUB GATE (Access code)
 ///////////////////////////////////////////////////////
 function checkCode() {
   const code = document.getElementById("clubCode").value.trim();
+
   if (code === CLUB_CODE) {
     localStorage.setItem("clubAccess", "yes");
     clubGate.style.display = "none";
@@ -70,7 +73,7 @@ function checkCode() {
   }
 }
 
-// skip code if already passed
+// auto-open if user already passed the gate
 if (localStorage.getItem("clubAccess") === "yes") {
   clubGate.style.display = "none";
   loginBox.style.display = "block";
@@ -94,7 +97,7 @@ function showLogin() {
 }
 
 ///////////////////////////////////////////////////////
-// STEAM ID PREVIEW
+// STEAM ID PREVIEW (OpenDota)
 ///////////////////////////////////////////////////////
 async function previewSteamId() {
   const id = document.getElementById("regSteamId").value.trim();
@@ -107,26 +110,31 @@ async function previewSteamId() {
     const res  = await fetch(`https://api.opendota.com/api/players/${id}`);
     const data = await res.json();
 
-    if (!data || !data.profile)
-      return alert("Не постои Dota профил со ова ID.");
+    if (!data || !data.profile) {
+      steamPreviewBox.innerHTML = "<span class='error'>Не постои Dota профил со ова ID.</span>";
+      return;
+    }
 
-    const name  = data.profile.personaname || "";
+    const name   = data.profile.personaname || "";
     const avatar = data.profile.avatarfull || "";
 
     currentSteamAvatar = avatar;
 
-    if (!regUsername.value.trim() && name)
+    // Auto-fill username if empty
+    if (!regUsername.value.trim() && name) {
       regUsername.value = name;
+    }
 
     steamPreviewBox.innerHTML = `
       <strong>Детали:</strong><br>
       Име: ${escapeHtml(name)}<br>
-      Dota ID: ${data.profile.account_id}
-      ${avatar ? `<img src="${avatar}" />` : ""}
+      Dota ID: ${data.profile.account_id}<br><br>
+      ${avatar ? `<img src="${avatar}" style="width:80px;border-radius:8px;" />` : ""}
     `;
 
-  } catch {
-    alert("OpenDota не работи моментално.");
+  } catch (err) {
+    console.error(err);
+    steamPreviewBox.innerHTML = "<span class='error'>OpenDota има проблем.</span>";
   }
 }
 
@@ -147,11 +155,13 @@ async function register() {
     return setStatus(regStatus, "Лозинките не се совпаѓаат.", true);
 
   try {
+    // Create email user
     const userCred = await auth.createUserWithEmailAndPassword(email, pass);
     const user = userCred.user;
 
     await user.updateProfile({ displayName: username });
 
+    // Firestore entry
     await db.collection("users").doc(user.uid).set({
       username,
       email,
@@ -165,10 +175,12 @@ async function register() {
     });
 
     await user.sendEmailVerification();
-    alert("Провери email за верификација.");
+    alert("Провери го email-от за верификација.");
+
     showLogin();
 
   } catch (err) {
+    console.error(err);
     setStatus(regStatus, "Грешка: " + err.message, true);
   }
 }
@@ -194,6 +206,7 @@ async function login() {
     window.location.href = "main.html";
 
   } catch (err) {
+    console.error(err);
     setStatus(loginStatus, "Грешка: " + err.message, true);
   }
 }
@@ -220,6 +233,7 @@ async function sendResetEmail() {
     setStatus(resetStatus, "Испратена е порака!", false);
 
   } catch (err) {
+    console.error(err);
     setStatus(resetStatus, "Грешка: " + err.message, true);
   }
 }
