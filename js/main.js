@@ -15,32 +15,32 @@ if (isPreview) {
 }
 
 // ─────────────────────────────
-// 🎟️ STEAM LOGIN TOKEN HANDLER (ФИКСИРАНО!)
+// 🎟️ STEAM LOGIN TOKEN HANDLER
 // ─────────────────────────────
 async function handleSteamLogin() {
   const url = new URL(window.location.href);
   const steamToken = url.searchParams.get("steamToken");
 
-  if (!steamToken) return; // нема steam login
+  if (!steamToken) return;
 
   console.log("Steam token detected:", steamToken);
 
   try {
-    // 🟢 Директно логирање преку Firebase Custom Token
+    // 🔥 Login directly with Firebase Custom Token
     const userCred = await auth.signInWithCustomToken(steamToken);
     const user = userCred.user;
 
-    // 🔥 Update Firestore online статус
+    // Update online status
     await db.collection("users").doc(user.uid).set({
       online: true,
       lastSeen: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
-    // ❌ Исчисти URL параметар
+    // Remove token from URL
     url.searchParams.delete("steamToken");
     window.history.replaceState({}, document.title, url.toString());
 
-    // ➡️ Влези на главната страна
+    // Continue to main
     location.href = "main.html";
 
   } catch (err) {
@@ -49,11 +49,10 @@ async function handleSteamLogin() {
   }
 }
 
-// Активирај веднаш
 handleSteamLogin();
 
 // ─────────────────────────────
-// 🔐 AUTH & USER LOAD
+// 🔐 AUTH & USER LOAD (STEAM FIXED)
 // ─────────────────────────────
 auth.onAuthStateChanged(async user => {
   if (!user) {
@@ -61,8 +60,17 @@ auth.onAuthStateChanged(async user => {
     return;
   }
 
+  // ⭐ FIX — Allow Steam users even without email
+  const isSteamUser = user.uid.startsWith("steam:");
+
+  if (!isSteamUser && user.email && !user.emailVerified) {
+    location.href = "index.html";
+    return;
+  }
+
   currentUser = user;
 
+  // Load Firestore user
   const userDoc = await db.collection("users").doc(user.uid).get();
   const u = userDoc.exists ? userDoc.data() : {};
   userRole = u.role || "member";
@@ -70,9 +78,10 @@ auth.onAuthStateChanged(async user => {
   const name = u.username || user.email?.split("@")[0] || "Корисник";
   document.getElementById("userName").textContent = name;
 
+  // ─────────────────────────────
+  // 🖼️ Аватар
+  // ─────────────────────────────
   const av = document.getElementById("userAvatar");
-
-  // Аватар
   if (av) {
     if (u.avatarUrl) {
       const img = new Image();
@@ -95,7 +104,9 @@ auth.onAuthStateChanged(async user => {
 
   const isAdmin = userRole === "admin";
 
-  // MAINTENANCE PREVIEW (ADMIN)
+  // ─────────────────────────────
+  // 🛠️ MAINTENANCE PREVIEW (ADMIN)
+  // ─────────────────────────────
   if (isPreview && isAdmin) {
     try {
       const maintDoc = await db.collection("config").doc("maintenance").get();
@@ -114,7 +125,9 @@ auth.onAuthStateChanged(async user => {
     return;
   }
 
-  // MAINTENANCE за members
+  // ─────────────────────────────
+  // 🔒 MAINTENANCE за MEMBERS
+  // ─────────────────────────────
   if (!isAdmin) {
     try {
       const maintDoc = await db.collection("config").doc("maintenance").get();
@@ -132,7 +145,9 @@ auth.onAuthStateChanged(async user => {
     } catch {}
   }
 
-  // PANELS
+  // ─────────────────────────────
+  // Panels
+  // ─────────────────────────────
   if (userRole === "admin") {
     document.getElementById("adminPanel").style.display = "block";
   }
@@ -140,7 +155,7 @@ auth.onAuthStateChanged(async user => {
     document.getElementById("modPanel").style.display = "block";
   }
 
-  // ONLINE STATUS
+  // Update online status
   await db.collection("users").doc(user.uid).set({
     online: true,
     lastSeen: firebase.firestore.FieldValue.serverTimestamp()
@@ -174,7 +189,7 @@ auth.onAuthStateChanged(async user => {
   updateOnlineCount();
   setInterval(updateOnlineCount, 30000);
 
-  // OFFLINE on close
+  // Offline on close
   const setOffline = () => {
     if (!currentUser) return;
     db.collection("users").doc(currentUser.uid).update({
@@ -221,7 +236,11 @@ async function loadLiveMatches() {
   out.innerHTML = "Проверувам...";
 
   try {
-    const users = await db.collection("users").where("steamId", "!=", "").limit(1).get();
+    const users = await db.collection("users")
+      .where("steamId", "!=", "")
+      .limit(1)
+      .get();
+
     const now = Date.now();
     const results = [];
 
@@ -242,7 +261,9 @@ async function loadLiveMatches() {
       lastRequestTime = Date.now();
 
       try {
-        const url = `https://api.allorigins.win/get?url=${encodeURIComponent('https://api.opendota.com/api/players/' + steamId + '/matches?limit=1')}`;
+        const url = `https://api.allorigins.win/get?url=${encodeURIComponent(
+          'https://api.opendota.com/api/players/' + steamId + '/matches?limit=1'
+        )}`;
         const res = await fetch(url);
         if (!res.ok) continue;
 
@@ -300,15 +321,15 @@ async function getHeroName(heroId) {
 }
 
 // ─────────────────────────────
-// ⏰ Време + Држава (IP)
+// ⏰ Време + Држава
 // ─────────────────────────────
 function updateTimeAndCountry() {
   const now = new Date();
-  const timeString = now.toLocaleTimeString('mk-MK', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    timeZoneName: 'short'
+  const timeString = now.toLocaleTimeString("mk-MK", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    timeZoneName: "short"
   });
 
   document.getElementById("currentTime").textContent = timeString;
@@ -344,7 +365,8 @@ function updateTimeAndCountry() {
     })
     .catch(() => {
       document.getElementById("userCountry").textContent = "??";
-      document.getElementById("countryFlag").src = "https://flagcdn.com/16x12/un.png";
+      document.getElementById("countryFlag").src =
+        "https://flagcdn.com/16x12/un.png";
       document.getElementById("countryName").textContent = "Непозната";
     });
 }
