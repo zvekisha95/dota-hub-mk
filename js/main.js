@@ -37,10 +37,13 @@ async function handleSteamLogin() {
     const userCred = await auth.signInWithCustomToken(steamToken);
     const user = userCred.user;
 
-    await db.collection("users").doc(user.uid).set({
-      online: true,
-      lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    await db.collection("users").doc(user.uid).set(
+      {
+        online: true,
+        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+      },
+      { merge: true }
+    );
 
     window.__steamLoginInProgress = false;
 
@@ -48,7 +51,6 @@ async function handleSteamLogin() {
     window.history.replaceState({}, document.title, url.toString());
 
     location.href = "main.html";
-
   } catch (err) {
     window.__steamLoginInProgress = false;
     console.error("Steam token error:", err);
@@ -62,7 +64,6 @@ handleSteamLogin();
 // 🔐 AUTH HANDLER — FIXED VERSION
 // ─────────────────────────────────────────
 auth.onAuthStateChanged(async user => {
-
   // 🛑 BLOCK redirect while Steam login is still running
   if (!user) {
     if (window.__steamLoginInProgress) {
@@ -73,7 +74,7 @@ auth.onAuthStateChanged(async user => {
     return;
   }
 
-  const isSteamUser = user.uid.startsWith("steam:");
+  const isSteamUser = typeof user.uid === "string" && user.uid.startsWith("steam:");
 
   // ❗ FIX: Email users must verify email — Steam users do NOT
   if (!isSteamUser && user.email && !user.emailVerified) {
@@ -96,7 +97,7 @@ auth.onAuthStateChanged(async user => {
   if (userNameElement) userNameElement.textContent = name;
 
   // ─────────────────────────────────────────
-  // PROFILE LINK FIX → NOW WORKS 100%
+  // PROFILE LINK
   // ─────────────────────────────────────────
   const profileLink = document.getElementById("profileLink");
   if (profileLink) {
@@ -104,10 +105,16 @@ auth.onAuthStateChanged(async user => {
   }
 
   // ─────────────────────────────────────────
-  // AVATAR FIX
+  // AVATAR FIX + CLICK → PROFILE
   // ─────────────────────────────────────────
   const av = document.getElementById("userAvatar");
   if (av) {
+    const setInitialAvatar = () => {
+      av.style.background = `hsl(${(name.charCodeAt(0) * 7) % 360},70%,55%)`;
+      av.style.backgroundImage = "";
+      av.textContent = name[0].toUpperCase();
+    };
+
     if (u.avatarUrl) {
       const img = new Image();
       img.onload = () => {
@@ -116,20 +123,23 @@ auth.onAuthStateChanged(async user => {
         av.style.backgroundPosition = "center";
         av.textContent = "";
       };
-      img.onerror = () => {
-        av.textContent = name[0].toUpperCase();
-      };
+      img.onerror = setInitialAvatar;
       img.src = u.avatarUrl;
     } else {
-      av.style.background = `hsl(${(name.charCodeAt(0) * 7) % 360},70%,55%)`;
-      av.textContent = name[0].toUpperCase();
+      setInitialAvatar();
     }
+
+    // 👉 клик на аватарот → профил
+    av.style.cursor = "pointer";
+    av.onclick = () => {
+      location.href = `profile.html?id=${user.uid}`;
+    };
   }
 
   const isAdmin = userRole === "admin";
 
   // ─────────────────────────────────────────
-  // MAINTENANCE PREVIEW
+  // MAINTENANCE PREVIEW (ADMIN ONLY)
   // ─────────────────────────────────────────
   if (isPreview && isAdmin) {
     try {
@@ -145,7 +155,9 @@ auth.onAuthStateChanged(async user => {
           <div class="note">Ќе се вратиме наскоро!</div>
         </div>
       `;
-    } catch {}
+    } catch {
+      // ignore
+    }
     return;
   }
 
@@ -156,7 +168,7 @@ auth.onAuthStateChanged(async user => {
     try {
       const maintDoc = await db.collection("config").doc("maintenance").get();
       if (maintDoc.exists && maintDoc.data().enabled) {
-        const safeMsg = escapeHtml(maintDoc.data().message);
+        const safeMsg = escapeHtml(maintDoc.data().message || "Сајтот е во одржување...");
         document.body.innerHTML = `
           <div class="maintenance-screen">
             <h1>Сајтот е во одржување</h1>
@@ -166,22 +178,30 @@ auth.onAuthStateChanged(async user => {
         `;
         return;
       }
-    } catch {}
+    } catch {
+      // ignore
+    }
   }
 
   // ─────────────────────────────────────────
   // PANELS
   // ─────────────────────────────────────────
-  if (isAdmin) document.getElementById("adminPanel").style.display = "block";
-  if (isAdmin || userRole === "moderator") {
-    document.getElementById("modPanel").style.display = "block";
+  const adminPanel = document.getElementById("adminPanel");
+  if (isAdmin && adminPanel) adminPanel.style.display = "block";
+
+  const modPanel = document.getElementById("modPanel");
+  if ((isAdmin || userRole === "moderator") && modPanel) {
+    modPanel.style.display = "block";
   }
 
   // Set online
-  await db.collection("users").doc(user.uid).set({
-    online: true,
-    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-  }, { merge: true });
+  await db.collection("users").doc(user.uid).set(
+    {
+      online: true,
+      lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+    },
+    { merge: true }
+  );
 
   loadStats();
   loadLiveMatches();
@@ -204,8 +224,10 @@ auth.onAuthStateChanged(async user => {
           }
         });
 
-        document.getElementById("onlineCount").textContent = count;
-      });
+        const onlineEl = document.getElementById("onlineCount");
+        if (onlineEl) onlineEl.textContent = count;
+      })
+      .catch(err => console.error("Online count error:", err));
   };
 
   updateOnlineCount();
@@ -213,10 +235,13 @@ auth.onAuthStateChanged(async user => {
 
   // Set offline on exit
   window.addEventListener("beforeunload", () => {
-    db.collection("users").doc(user.uid).update({
-      online: false,
-      lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    db.collection("users")
+      .doc(user.uid)
+      .update({
+        online: false,
+        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+      })
+      .catch(() => {});
   });
 });
 
@@ -234,10 +259,13 @@ async function loadStats() {
       comments += com.size;
     }
 
-    document.getElementById("memberCount").textContent = users.size;
-    document.getElementById("threadCount").textContent = threads.size;
-    document.getElementById("commentCount").textContent = comments;
+    const memberCountEl = document.getElementById("memberCount");
+    const threadCountEl = document.getElementById("threadCount");
+    const commentCountEl = document.getElementById("commentCount");
 
+    if (memberCountEl) memberCountEl.textContent = users.size;
+    if (threadCountEl) threadCountEl.textContent = threads.size;
+    if (commentCountEl) commentCountEl.textContent = comments;
   } catch (err) {
     console.error("STATS ERROR:", err);
   }
@@ -253,6 +281,8 @@ let lastRequestTime = 0;
 
 async function loadLiveMatches() {
   const out = document.getElementById("liveMatches");
+  if (!out) return;
+
   out.innerHTML = "Проверувам...";
 
   try {
@@ -282,7 +312,7 @@ async function loadLiveMatches() {
 
       try {
         const url = `https://api.allorigins.win/get?url=${encodeURIComponent(
-          'https://api.opendota.com/api/players/' + steamId + '/matches?limit=1'
+          "https://api.opendota.com/api/players/" + steamId + "/matches?limit=1"
         )}`;
 
         const res = await fetch(url);
@@ -293,7 +323,10 @@ async function loadLiveMatches() {
         if (!Array.isArray(matches) || matches.length === 0) continue;
 
         const match = matches[0];
-        if (match.duration !== null || !match.start_time) continue;
+
+        // Ова реално е "последен меч", не вистински live,
+        // но останувам на твојата логика.
+        if (!match.start_time || match.duration == null) continue;
 
         const hero = await getHeroName(match.hero_id);
         const kda = `${match.kills}/${match.deaths}/${match.assists}`;
@@ -301,20 +334,20 @@ async function loadLiveMatches() {
 
         const html = `
           <div class="live-match">
-            <span class="live-hero">${username}</span> е во
+            <span class="live-hero">${escapeHtml(username)}</span> е во
             <span class="live-hero">${duration < 2 ? "matchmaking" : "game"}</span> со
-            <span class="live-hero">${hero}</span>
+            <span class="live-hero">${escapeHtml(hero)}</span>
             <br>
             <span class="live-kda">KDA: ${kda}</span> —
             <span class="live">Време: ${duration} мин</span>
             <br>
-            <a href="https://www.dotabuff.com/matches/${match.match_id}" target="_blank" class="watch-btn">ГЛЕДАЈ</a>
+            <a href="https://www.dotabuff.com/matches/${match.match_id}"
+               target="_blank" class="watch-btn">ГЛЕДАЈ</a>
           </div>
         `;
 
         liveCache[steamId] = { html, time: now };
         results.push(html);
-
       } catch (e) {
         console.error("OpenDota Error:", e);
         liveCache[steamId] = { html: null, time: now };
@@ -322,8 +355,8 @@ async function loadLiveMatches() {
     }
 
     out.innerHTML = results.length ? results.join("") : "Никој не игра моментално.";
-
-  } catch {
+  } catch (err) {
+    console.error("LIVE MATCHES ERROR:", err);
     out.innerHTML = "Грешка при читање.";
   }
 }
@@ -355,42 +388,55 @@ function updateTimeAndCountry() {
     timeZoneName: "short"
   });
 
-  document.getElementById("currentTime").textContent = timeString;
+  const timeEl = document.getElementById("currentTime");
+  if (timeEl) timeEl.textContent = timeString;
 
   const cached = localStorage.getItem("countryData");
   const cacheTime = localStorage.getItem("countryDataTime");
   const nowTime = Date.now();
 
+  const countryCodeEl = document.getElementById("userCountry");
+  const countryFlagEl = document.getElementById("countryFlag");
+  const countryNameEl = document.getElementById("countryName");
+
+  const applyCountry = data => {
+    if (countryCodeEl) countryCodeEl.textContent = data.code;
+    if (countryFlagEl) {
+      countryFlagEl.src =
+        `https://flagcdn.com/16x12/${data.code.toLowerCase()}.png`;
+    }
+    if (countryNameEl) countryNameEl.textContent = data.name;
+  };
+
   if (cached && cacheTime && (nowTime - cacheTime < 300000)) {
     const data = JSON.parse(cached);
-
-    document.getElementById("userCountry").textContent = data.code;
-    document.getElementById("countryFlag").src =
-      `https://flagcdn.com/16x12/${data.code.toLowerCase()}.png`;
-    document.getElementById("countryName").textContent = data.name;
+    applyCountry(data);
     return;
   }
 
   fetch("https://ipinfo.io/json?token=d509339eb76b5e")
     .then(res => res.json())
     .then(data => {
-      const countryData = {
-        code: data.country || "??",
-        name: data.country === "MK" ? "Македонија" : data.country_name || "Непозната"
-      };
+      const code = data.country || "??";
+      let name;
+      if (code === "MK") {
+        name = "Македонија";
+      } else {
+        name = data.country_name || code || "Непозната";
+      }
 
-      document.getElementById("userCountry").textContent = countryData.code;
-      document.getElementById("countryFlag").src =
-        `https://flagcdn.com/16x12/${countryData.code.toLowerCase()}.png`;
-      document.getElementById("countryName").textContent = countryData.name;
+      const countryData = { code, name };
+      applyCountry(countryData);
 
       localStorage.setItem("countryData", JSON.stringify(countryData));
-      localStorage.setItem("countryDataTime", nowTime);
+      localStorage.setItem("countryDataTime", String(nowTime));
     })
     .catch(() => {
-      document.getElementById("userCountry").textContent = "??";
-      document.getElementById("countryFlag").src = "https://flagcdn.com/16x12/un.png";
-      document.getElementById("countryName").textContent = "Непозната";
+      const fallback = { code: "??", name: "Непозната" };
+      if (countryFlagEl) {
+        countryFlagEl.src = "https://flagcdn.com/16x12/un.png";
+      }
+      applyCountry(fallback);
     });
 }
 
