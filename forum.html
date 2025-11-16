@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="mk">
 <head>
@@ -147,40 +146,7 @@
             box-shadow: 0 0 30px rgba(59,130,246,0.9);
         }
 
-        /* Forum rows */
-        .thread-row {
-            display: grid;
-            grid-template-columns: 48px 1fr 160px 150px 80px;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 2px;
-        }
-
-        .thread-title {
-            color: #e0f2fe;
-            font-size: 1rem;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .thread-author {
-            color: #93c5fd;
-            text-decoration: none;
-            font-size: 0.9rem;
-        }
-
-        .thread-date {
-            font-size: 0.85rem;
-            color: #9ca3af;
-        }
-
-        .thread-comments {
-            color: #22c55e;
-            font-size: 0.9rem;
-            font-weight: bold;
-        }
-
-        /* Card */
+        /* Thread card */
         .thread-card {
             background: radial-gradient(circle at top left, rgba(30,64,175,0.45), rgba(15,23,42,0.95));
             padding: 14px;
@@ -195,20 +161,45 @@
             box-shadow: 0 0 22px rgba(59,130,246,0.7);
         }
 
+        .thread-header {
+            margin-bottom: 6px;
+        }
+
+        .thread-title {
+            color: #e0f2fe;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .thread-meta {
+            font-size: 0.85rem;
+            margin-top: 4px;
+            color: #9ca3af;
+        }
+
+        .thread-meta a {
+            color: #93c5fd;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
         .avatar {
-            width: 42px;
-            height: 42px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            background: #1f2937;
             background-size: cover;
             background-position: center;
-            font-weight: 700;
-            color: white;
-            display: flex;
+            background: #1f2937;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
+            font-weight: 700;
+            color: #fff;
             border: 1px solid rgba(191,219,254,0.6);
+            margin-right: 10px;
         }
+
     </style>
 </head>
 
@@ -224,7 +215,8 @@
 
         <div class="top-links">
             <a href="main.html">Главна</a>
-            <a href="#" style="opacity:0.6;pointer-events:none;">Профил</a>
+            <a href="#" id="profileLink">Профил</a>
+            <a href="#" onclick="logoutUser()">Одјави се</a>
         </div>
     </div>
 </div>
@@ -238,12 +230,9 @@
             <div class="title-sub">Разговори, build-ови, тактики и мемиња за Dota 2.</div>
         </div>
 
-        <a id="newThreadBtn" href="new-thread.html">
-            ＋ Нова тема
-        </a>
+        <a id="newThreadBtn" href="new-thread.html">＋ Нова тема</a>
     </div>
 
-    <!-- Forum list -->
     <div id="threadList"></div>
 
 </div>
@@ -256,5 +245,14 @@
 <script src="js/firebase-config.js"></script>
 <script src="js/forum.js"></script>
 
+<script>
+function logoutUser() {
+    auth.signOut().then(() => {
+        location.href = "index.html";
+    });
+}
+</script>
+
 </body>
 </html>
+
