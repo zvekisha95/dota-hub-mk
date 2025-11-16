@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <title>Zvekisha Dota Hub – Главна</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
-    /* --- ТВОЈОТ CSS Е НЕТАКНАТ --- */
     :root {
       --bg: radial-gradient(circle at top, #1e293b 0, #020617 55%, #000 100%);
       --card: rgba(15,23,42,0.95);
@@ -27,6 +27,112 @@
       font-family: system-ui, sans-serif;
       min-height: 100vh;
     }
+
+    /* -------------------- TOP BAR -------------------- */
+
+    .topbar {
+      width: 100%;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top,
+        rgba(15,23,42,0.9) 0,
+        rgba(15,23,42,0.95) 45%,
+        #020617 100%
+      );
+      border-bottom: 1px solid rgba(30,64,175,0.8);
+      box-shadow: 0 6px 20px rgba(15,23,42,0.8);
+    }
+
+    .topbar-inner {
+      width: 100%;
+      max-width: 1050px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: radial-gradient(circle at 30% 0%, #bfdbfe 0, #1d4ed8 45%, #020617 100%);
+      box-shadow: 0 0 16px rgba(59,130,246,0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.2rem;
+      color: #e5e7eb;
+    }
+
+    .logo-text {
+      font-weight: 700;
+      font-size: 1.2rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #bfdbfe;
+      text-shadow: 0 0 18px rgba(96,165,250,0.85);
+    }
+
+    .top-links {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .top-links a {
+      color: #e5e7eb;
+      text-decoration: none;
+      font-size: 0.9rem;
+      opacity: 0.85;
+      transition: 0.2s;
+      white-space: nowrap;
+    }
+
+    .top-links a:hover {
+      opacity: 1;
+      color: #bfdbfe;
+    }
+
+    /* DONATE BUTTON */
+
+    .donate-btn {
+      background: linear-gradient(180deg, #3b82f6, #1e40af);
+      padding: 7px 14px;
+      border-radius: 10px;
+      color: #e0f2fe !important;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border: 1px solid rgba(191,219,254,0.45);
+      text-decoration: none;
+      box-shadow: 0 0 18px rgba(59,130,246,0.85);
+      transition: 0.15s ease-in-out;
+    }
+
+    .donate-btn:hover {
+      transform: scale(1.07);
+      filter: brightness(1.15);
+      box-shadow: 0 0 26px rgba(96,165,250,0.95);
+    }
+
+    .donate-sub {
+      font-size: 0.7rem;
+      color: #9ca3af;
+      text-align: center;
+      margin-top: -6px;
+      margin-bottom: -2px;
+      user-select: none;
+    }
+
+    /* -------------------- REST OF PAGE -------------------- */
 
     .wrapper {
       max-width: 1100px;
@@ -79,49 +185,8 @@
 
     .card:hover { transform: translateY(-4px); }
 
-    .card h3 { margin-bottom: 12px; font-size: 1.3rem; }
-
-    .card a {
-      color: #60a5fa;
-      text-decoration: none;
-      font-weight: 600;
-    }
-
+    .card a { color: #60a5fa; font-weight: 600; text-decoration:none; }
     .card a:hover { text-decoration: underline; }
-
-    .live-match {
-      background: rgba(34,197,94,0.15);
-      padding: 12px;
-      border-radius: 10px;
-      margin-bottom: 8px;
-      font-size: 0.9rem;
-    }
-
-    .live-hero { font-weight: 700; color: #22c55e; }
-    .live-kda { color: #fbbf24; }
-    .live { color: #22c55e; font-weight: 600; }
-
-    .watch-btn {
-      display: inline-block;
-      margin-top: 6px;
-      padding: 6px 10px;
-      background: #22c55e;
-      color: #020617;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      text-decoration: none;
-    }
-
-    .watch-btn:hover { background: #16a34a; }
-
-    .refresh-info { font-size: 0.75rem; color: #9ca3af; text-align: right; margin-top: 8px; }
-
-    .online-users {
-      font-size: 0.9rem;
-      color: #22c55e;
-      font-weight: 600;
-    }
 
     .footer {
       text-align: center;
@@ -139,93 +204,52 @@
       align-items: center;
       justify-content: center;
       font-size: 1.2rem;
-      color: #000;
       background-size: cover;
       background-position: center;
-    }
-
-    .user-info { text-align: center; margin: 10px 0; font-size: 0.9rem; color: #9ca3af; }
-    .user-flag { text-align: center; margin: 5px 0; font-size: 0.9rem; color: #e5e7eb; }
-
-    /* -------------- DONATE BUTTON -------------- */
-    .donate-wrapper {
-      position: fixed;
-      top: 20px;
-      right: 24px;
-      text-align: center;
-      z-index: 999999;
-    }
-
-    .donate-floating {
-      display: inline-block;
-      background: linear-gradient(180deg, #3b82f6, #1e40af);
-      padding: 10px 20px;
-      border-radius: 12px;
-      color: #e0f2fe;
-      font-weight: 700;
-      text-decoration: none;
-      font-size: 1rem;
-      border: 1px solid rgba(191,219,254,0.45);
-      box-shadow: 0 0 20px rgba(59,130,246,0.7);
-      transition: 0.15s ease-in-out;
-      white-space: nowrap;
-    }
-
-    .donate-floating:hover {
-      transform: scale(1.08);
-      filter: brightness(1.15);
-      box-shadow: 0 0 30px rgba(96,165,250,0.9);
-    }
-
-    .donate-subtext {
-      margin-top: 4px;
-      font-size: 0.78rem;
-      color: #9ca3af;
-      user-select: none;
-    }
-
-    @media (max-width: 600px) {
-      .donate-wrapper {
-        top: 14px;
-        right: 14px;
-      }
-      .donate-floating {
-        padding: 8px 14px;
-        font-size: 0.9rem;
-      }
-      .donate-subtext {
-        font-size: 0.7rem;
-      }
+      color: #000;
     }
   </style>
 </head>
 
 <body>
 
-<!-- DONATE BUTTON -->
-<div class="donate-wrapper">
-  <a href="https://www.paypal.com/paypalme/Zvekisha" target="_blank" class="donate-floating">🅿 Donate</a>
-  <div class="donate-subtext">Support this site</div>
+<!-- ================= TOP BAR ================= -->
+<div class="topbar">
+  <div class="topbar-inner">
+
+    <div class="logo">
+      <div class="logo-badge">Z</div>
+      <div class="logo-text">Zvekisha Dota Hub</div>
+    </div>
+
+    <div class="top-links">
+      <a href="main.html">Главна</a>
+      <a href="#" id="profileLink">Профил</a>
+      <a href="#" onclick="logoutUser()">Одјави се</a>
+
+      <div style="text-align:center;">
+        <a href="https://www.paypal.com/paypalme/Zvekisha"
+           target="_blank"
+           class="donate-btn">🅿 Donate</a>
+        <div class="donate-sub">Support this site</div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
+
+<!-- ================= PAGE CONTENT ================= -->
+
 <div class="wrapper">
+
   <div class="hero">
     <h1>Добредојде, <span id="userName">...</span>!</h1>
     <p>Надградба: 15.11.2025 06:34 PM CET</p>
 
-    <div style="position:absolute; top:20px; right:20px; display:flex; align-items:center; gap:10px;">
+    <div style="position:absolute; top:20px; right:20px;">
       <div class="avatar" id="userAvatar">U</div>
     </div>
-  </div>
-
-  <div class="user-info">
-    <span id="currentTime">Loading...</span> |
-    <span id="userCountry">??</span>
-  </div>
-
-  <div class="user-flag">
-    <img id="countryFlag" src="https://flagcdn.com/16x12/un.png" alt="??">
-    <span id="countryName">Непозната</span>
   </div>
 
   <div class="stats">
@@ -236,7 +260,6 @@
   </div>
 
   <div class="grid">
-
     <div class="card">
       <h3>Форум</h3>
       <p>Погледни ги последните теми и дискусии.</p>
@@ -252,41 +275,34 @@
     <div class="card">
       <h3>Мој профил</h3>
       <p>Твоите теми, коментари, MMR.</p>
-      <a href="#" id="profileLink">Мојот профил</a>
+      <a href="#" id="profileLink2">Мојот профил</a>
     </div>
 
     <div class="card">
       <h3>Live мечеви</h3>
       <div id="liveMatches">Никој не игра моментално.</div>
-      <div class="refresh-info">Ажурирано на секои 15 секунди</div>
     </div>
-
-    <div class="card" id="modPanel" style="display:none;">
-      <h3>Модерација</h3>
-      <p>Flagged, ban, sticky, lock.</p>
-      <a href="dashboard.html">Moderator Dashboard</a>
-    </div>
-
-    <div class="card" id="adminPanel" style="display:none;">
-      <h3>Админ</h3>
-      <p>Управувај со корисници и систем.</p>
-      <a href="admin.html">Admin Panel</a>
-    </div>
-
   </div>
+
 </div>
 
 <div class="footer">
-  Zvekisha Dota Hub © 2025 | Само за членови | Код: ZVEKISH322
+  Zvekisha Dota Hub © 2025 | Само за членови
 </div>
 
-<!-- Firebase + JS -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
 <script src="js/firebase-config.js?v=999999"></script>
 <script src="js/main.js?v=999999"></script>
+
+<script>
+function logoutUser() {
+    auth.signOut().then(() => location.href = "index.html");
+}
+</script>
 
 </body>
 </html>
