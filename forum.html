@@ -5,7 +5,6 @@
     <title>Форум – Zvekisha Dota Hub</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-    <!-- Blizzard-ish font -->
     <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;700&display=swap" rel="stylesheet"/>
 
     <style>
@@ -31,7 +30,6 @@
             font-family: 'Oxanium', system-ui, sans-serif;
         }
 
-        /* Top bar */
         .topbar {
             width: 100%;
             padding: 10px 20px;
@@ -91,7 +89,6 @@
 
         .top-links a:hover { opacity: 1; color: #bfdbfe; }
 
-        /* Main container */
         .container {
             max-width: 1050px;
             margin: 28px auto 40px auto;
@@ -146,7 +143,6 @@
             box-shadow: 0 0 30px rgba(59,130,246,0.9);
         }
 
-        /* Thread card */
         .thread-card {
             background: radial-gradient(circle at top left, rgba(30,64,175,0.45), rgba(15,23,42,0.95));
             padding: 14px;
@@ -161,9 +157,7 @@
             box-shadow: 0 0 22px rgba(59,130,246,0.7);
         }
 
-        .thread-header {
-            margin-bottom: 6px;
-        }
+        .thread-header { margin-bottom: 6px; }
 
         .thread-title {
             color: #e0f2fe;
@@ -183,23 +177,6 @@
             text-decoration: none;
             font-weight: 600;
         }
-
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-size: cover;
-            background-position: center;
-            background: #1f2937;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            color: #fff;
-            border: 1px solid rgba(191,219,254,0.6);
-            margin-right: 10px;
-        }
-
     </style>
 </head>
 
@@ -221,7 +198,7 @@
     </div>
 </div>
 
-<!-- MAIN PANEL -->
+<!-- MAIN -->
 <div class="container">
 
     <div class="header-row">
@@ -237,7 +214,6 @@
 
 </div>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -247,12 +223,9 @@
 
 <script>
 function logoutUser() {
-    auth.signOut().then(() => {
-        location.href = "index.html";
-    });
+    auth.signOut().then(() => location.href = "index.html");
 }
 </script>
 
 </body>
 </html>
-
