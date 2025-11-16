@@ -6,21 +6,33 @@ let currentUser = null;
 let userRole = "member";
 
 // ─────────────────────────────
-// 🚪 Проверка за login + улога
+// 🚪 LOGIN + ROLE CHECK (Steam FIXED)
 // ─────────────────────────────
 auth.onAuthStateChanged(async user => {
-    if (!user || !user.emailVerified) {
+    if (!user) {
+        location.href = "index.html";
+        return;
+    }
+
+    // ✔ Allow Steam users (providerId = "custom")
+    const provider = user.providerData[0]?.providerId || "custom";
+
+    // ❌ For email/password → check emailVerified
+    if (provider === "password" && !user.emailVerified) {
+        alert("Провери ја емаил адресата за да влезеш.");
         location.href = "index.html";
         return;
     }
 
     currentUser = user;
 
+    // Load Firestore user
     const doc = await db.collection("users").doc(user.uid).get();
     const data = doc.exists ? doc.data() : {};
 
     userRole = data.role || "member";
 
+    // ✔ Allow only admins & moderators
     if (userRole !== "admin" && userRole !== "moderator") {
         alert("Немаш дозвола да влезеш во мод панел.");
         location.href = "main.html";
@@ -93,7 +105,7 @@ async function loadFlaggedComments() {
 }
 
 // ─────────────────────────────
-// 🗂️ LOAD THREADS (за модерација)
+// 🗂️ LOAD THREADS
 // ─────────────────────────────
 async function loadThreads() {
     const out = document.getElementById("modThreads");
