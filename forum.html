@@ -78,16 +78,42 @@
             text-shadow: 0 0 18px rgba(96,165,250,0.85);
         }
 
+        .top-links {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
         .top-links a {
             color: #e5e7eb;
             text-decoration: none;
             font-size: 0.9rem;
-            margin-left: 18px;
             opacity: 0.85;
             transition: 0.2s;
         }
 
         .top-links a:hover { opacity: 1; color: #bfdbfe; }
+
+        /* DONATE BUTTON */
+        .donate-btn {
+            background: linear-gradient(180deg, #3b82f6, #1e40af);
+            padding: 7px 14px;
+            border-radius: 10px;
+            color: #e0f2fe !important;
+            font-weight: 700;
+            font-size: 0.9rem;
+            border: 1px solid rgba(191,219,254,0.45);
+            text-decoration: none;
+            box-shadow: 0 0 18px rgba(59,130,246,0.85);
+            transition: 0.15s ease-in-out;
+            white-space: nowrap;
+        }
+
+        .donate-btn:hover {
+            transform: scale(1.07);
+            filter: brightness(1.15);
+            box-shadow: 0 0 26px rgba(96,165,250,0.95);
+        }
 
         .container {
             max-width: 1050px;
@@ -122,20 +148,15 @@
 
         #newThreadBtn {
             display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
             padding: 9px 16px;
             background: linear-gradient(180deg, #3b82f6, #1e40af);
             color: #e0f2fe;
             font-weight: 600;
-            text-decoration: none;
             border-radius: 12px;
             border: 1px solid rgba(191,219,254,0.45);
             box-shadow: 0 0 22px rgba(37,99,235,0.75);
-            font-size: 0.95rem;
+            text-decoration: none;
             transition: 0.16s ease;
-            white-space: nowrap;
         }
 
         #newThreadBtn:hover {
@@ -157,8 +178,6 @@
             box-shadow: 0 0 22px rgba(59,130,246,0.7);
         }
 
-        .thread-header { margin-bottom: 6px; }
-
         .thread-title {
             color: #e0f2fe;
             font-size: 1.1rem;
@@ -168,8 +187,8 @@
 
         .thread-meta {
             font-size: 0.85rem;
-            margin-top: 4px;
             color: #9ca3af;
+            margin-top: 4px;
         }
 
         .thread-meta a {
@@ -185,6 +204,7 @@
 <!-- TOP BAR -->
 <div class="topbar">
     <div class="topbar-inner">
+
         <div class="logo">
             <div class="logo-badge">Z</div>
             <div class="logo-text">Zvekisha Dota Hub</div>
@@ -193,8 +213,13 @@
         <div class="top-links">
             <a href="main.html">Главна</a>
             <a href="#" id="profileLink">Профил</a>
+
+            <!-- DONATE BUTTON -->
+            <a href="https://www.paypal.com/paypalme/Zvekisha" target="_blank" class="donate-btn">🅿 Donate</a>
+
             <a href="#" onclick="logoutUser()">Одјави се</a>
         </div>
+
     </div>
 </div>
 
@@ -229,4 +254,3 @@ function logoutUser() {
 
 </body>
 </html>
-
