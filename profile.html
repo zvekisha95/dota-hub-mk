@@ -1,6 +1,154 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+    <meta charset="UTF-8">
+    <title>Профил – Zvekisha Dota Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            margin: 0;
+            background: radial-gradient(circle at top, #1e293b 0, #020617 55%, #000 100%);
+            color: #e5e7eb;
+            font-family: system-ui, sans-serif;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: rgba(15,23,42,0.95);
+            padding: 20px 30px;
+            border-radius: 16px;
+            border: 1px solid rgba(55,65,81,0.6);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .profile-header {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        #p_avatar {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #fff;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .profile-info div {
+            margin-bottom: 8px;
+        }
+
+        .label {
+            color: #9ca3af;
+            font-size: 0.85rem;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            margin-top: 30px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(55,65,81,0.6);
+            padding-bottom: 5px;
+        }
+
+        .item, .comment-item {
+            background: rgba(34,197,94,0.10);
+            padding: 10px 14px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+
+        .item-title, .cm-thread {
+            color: #60a5fa;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .cm-text {
+            margin-top: 5px;
+            color: #e5e7eb;
+            font-size: 0.95rem;
+        }
+
+        .empty {
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        .loading {
+            color: #60a5fa;
+        }
+
+        .error {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        a.back {
+            display: inline-block;
+            margin-top: 20px;
+            color: #22c55e;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        a.back:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Профил на корисникот</h1>
+
+    <div class="profile-header">
+        <div id="p_avatar">U</div>
+
+        <div class="profile-info">
+            <div><span class="label">Име:</span> <span id="p_name">Loading...</span></div>
+            <div><span class="label">Улога:</span> <span id="p_role">...</span></div>
+            <div><span class="label">Бан:</span> <span id="p_banned">...</span></div>
+            <div><span class="label">Креиран:</span> <span id="p_created">...</span></div>
+            <div><span class="label">Земја:</span> <span id="p_country">...</span></div>
+        </div>
+    </div>
+
+    <!-- ТЕМИ -->
+    <div class="section-title">Теми на корисникот (<span id="threadCountProfile">0</span>)</div>
+    <div id="userThreads"></div>
+
+    <!-- КОМЕНТАРИ -->
+    <div class="section-title">Коментари (<span id="commentCountProfile">0</span>)</div>
+    <div id="userComments"></div>
+
+    <a class="back" href="main.html">⟵ Назад кон почетна</a>
+</div>
+
+<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
 <script src="js/firebase-config.js"></script>
 <script src="js/profile.js"></script>
+
+</body>
+</html>
