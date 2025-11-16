@@ -203,7 +203,7 @@
       <a href="main.html">Главна</a>
       <a href="forum.html">Форум</a>
       <a href="#" id="profileLink">Профил</a>
-      <a href="#" onclick="logoutUser()">Одјави се</a>
+      <a href="#" id="logoutLink">Одјави се</a>
       <a href="https://www.paypal.com/paypalme/Zvekisha" target="_blank" class="donate-btn">🅿 Donate</a>
     </div>
 
@@ -254,9 +254,10 @@
 <script src="js/main.js?v=999999"></script>
 
 <script>
-function logoutUser() {
-    auth.signOut().then(() => location.href = "index.html");
-}
+document.getElementById("logoutLink").onclick = function(e){
+  e.preventDefault();
+  auth.signOut().then(() => location.href = "index.html");
+};
 </script>
 
 </body>
