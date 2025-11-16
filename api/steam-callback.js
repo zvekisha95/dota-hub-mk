@@ -1,5 +1,6 @@
 // api/steam-callback.js
 const admin = require("./firebaseAdmin");
+const fetch = require("node-fetch"); // ➕ додадено за fetch
 
 // Extract SteamID64 from Steam OpenID URL
 function extractSteamId64(claimed) {
@@ -27,6 +28,27 @@ module.exports = async (req, res) => {
 
     const uid = `steam:${steamId64}`;
 
+    // 🔥 NEW — земи го вистинското Steam име + аватар
+    let personaName = `SteamUser-${steamId64.slice(-6)}`;
+    let avatarFull = "";
+
+    try {
+      const steamKey = process.env.STEAM_API_KEY; // треба да додадеш во Vercel
+      const apiUrl =
+        `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${steamKey}&steamids=${steamId64}`;
+
+      const resp = await fetch(apiUrl);
+      const json = await resp.json();
+      const p = json?.response?.players?.[0];
+
+      if (p) {
+        personaName = p.personaname || personaName;
+        avatarFull = p.avatarfull || "";
+      }
+    } catch (err) {
+      console.error("⚠️ Could not load Steam name/avatar:", err);
+    }
+
     // Create Firebase custom token
     const firebaseToken = await admin.auth().createCustomToken(uid, {
       steamId64
@@ -39,9 +61,9 @@ module.exports = async (req, res) => {
 
     if (!snap.exists) {
       await userRef.set({
-        username: `SteamUser-${steamId64.slice(-6)}`,
+        username: personaName,   // 🔥 користи вистинско Steam име
         steamId: steamId64,
-        avatarUrl: "",
+        avatarUrl: avatarFull,   // 🔥 користи вистински аватар
         role: "member",
         banned: false,
         online: true,
@@ -51,6 +73,8 @@ module.exports = async (req, res) => {
     } else {
       await userRef.set(
         {
+          username: personaName,     // 🔥 auto-update име
+          avatarUrl: avatarFull,     // 🔥 auto-update аватар
           online: true,
           lastSeen: admin.firestore.FieldValue.serverTimestamp()
         },
