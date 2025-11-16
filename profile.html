@@ -2,259 +2,128 @@
 <html lang="mk">
 <head>
     <meta charset="UTF-8">
-    <title>Профил – Zvekisha Dota Hub</title>
+    <title>Zvekisha Dota Hub – Форум</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
-        body {
-            margin: 0;
-            background: radial-gradient(circle at top, #1e293b 0, #020617 55%, #000 100%);
-            color: #e5e7eb;
-            font-family: system-ui, sans-serif;
-        }
+<style>
 
-        .container {
-            max-width: 950px;
-            width: 93%;
-            margin: 40px auto;
-            background: rgba(15,23,42,0.95);
-            padding: 25px 30px;
-            border-radius: 18px;
-            border: 1px solid rgba(55,65,81,0.55);
-            box-shadow: 0 12px 35px rgba(0,0,0,0.55);
-            backdrop-filter: blur(4px);
-        }
+body {
+    margin: 0;
+    background: radial-gradient(circle at top, #1e293b 0, #020617 55%, #000 100%);
+    color: #e5e7eb;
+    font-family: system-ui, sans-serif;
+}
 
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 1.9rem;
-        }
+.container {
+    max-width: 1100px;
+    margin: 40px auto;
+    background: rgba(15,23,42,0.95);
+    padding: 20px 30px;
+    border-radius: 16px;
+    border: 1px solid rgba(55,65,81,0.6);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+}
 
-        /* PROFILE HEADER */
-        .profile-header {
-            display: flex;
-            gap: 22px;
-            align-items: center;
-            padding-bottom: 20px;
-            border-bottom: 1px solid rgba(55,65,81,0.45);
-        }
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+}
 
-        #p_avatar {
-            width: 95px;
-            height: 95px;
-            border-radius: 50%;
-            background: #334155;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.2rem;
-            font-weight: bold;
-            color: #fff;
-            background-size: cover;
-            background-position: center;
-            flex-shrink: 0;
-            border: 2px solid rgba(148,163,184,0.4);
-        }
+/* THREAD LIST */
 
-        .profile-info div {
-            margin-bottom: 8px;
-            font-size: 1rem;
-        }
+.thread-card {
+    padding: 12px 14px;
+    background: rgba(30,41,59,0.5);
+    border: 1px solid rgba(55,65,81,0.5);
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
 
-        .label {
-            color: #9ca3af;
-            font-size: 0.85rem;
-            margin-right: 6px;
-        }
+.thread-horizontal {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 4px 0;
+    font-size: 0.9rem;
+}
 
-        /* SECTION TITLE */
-        .section-title {
-            font-size: 1.4rem;
-            margin-top: 35px;
-            margin-bottom: 12px;
-            border-bottom: 1px solid rgba(55,65,81,0.6);
-            padding-bottom: 5px;
-        }
+.avatar.small {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    background-color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+}
 
-        /* ========================
-           DOTA PROFILE PANEL
-        ======================== */
+.thread-title {
+    flex: 1;
+    color: #60a5fa;
+    font-weight: bold;
+    text-decoration: none;
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
-        #dotaProfile {
-            margin-top: 20px;
-            padding: 20px;
-            background: rgba(30, 41, 59, 0.55);
-            border-radius: 14px;
-            border: 1px solid rgba(148,163,184,0.25);
-        }
+.thread-type,
+.thread-user,
+.thread-date,
+.thread-comments {
+    white-space: nowrap;
+    font-size: 0.85rem;
+    color: #9ca3af;
+}
 
-        .dota-header {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
+/* Buttons */
 
-        .dota-avatar {
-            width: 82px;
-            height: 82px;
-            border-radius: 12px;
-            border: 1px solid rgba(148,163,184,0.3);
-        }
+.btn-delete {
+    margin-top: 8px;
+    background: #dc2626;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+}
 
-        .dota-info-block h2 {
-            margin: 0;
-            font-size: 1.35rem;
-        }
+.btn-delete:hover {
+    background: #b91c1c;
+}
 
-        .dota-link {
-            display: inline-block;
-            color: #60a5fa;
-            text-decoration: none;
-            margin-top: 4px;
-        }
+.error { color: #ef4444; }
+.empty { color: #9ca3af; font-style: italic; }
+.loading { color: #60a5fa; }
 
-        .dota-grid {
-            display: flex;
-            gap: 15px;
-            margin-top: 22px;
-            flex-wrap: wrap;
-        }
+.new-thread {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: #22c55e;
+    font-weight: bold;
+    text-decoration: none;
+}
 
-        .dota-card {
-            flex: 1;
-            min-width: 180px;
-            padding: 14px;
-            border-radius: 12px;
-            background: rgba(51,65,85,0.55);
-            border: 1px solid rgba(148,163,184,0.25);
-        }
+.new-thread:hover {
+    text-decoration: underline;
+}
 
-        .dota-card h3 {
-            margin-top: 0;
-            font-size: 1.1rem;
-        }
-
-        .dota-rank {
-            width: 75px;
-            margin-top: 8px;
-        }
-
-        .recent-title {
-            margin-top: 28px;
-            margin-bottom: 12px;
-            font-size: 1.2rem;
-        }
-
-        .recent-matches .match-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 14px;
-            margin-bottom: 8px;
-            background: rgba(51,65,85,0.45);
-            border-radius: 8px;
-            border: 1px solid rgba(148,163,184,0.25);
-            font-size: 0.95rem;
-        }
-
-        /* ========================
-           THREADS & COMMENTS
-        ======================== */
-
-        .item, .comment-item {
-            background: rgba(34,197,94,0.12);
-            padding: 12px 14px;
-            border-radius: 10px;
-            margin-bottom: 8px;
-            border: 1px solid rgba(34,197,94,0.22);
-        }
-
-        .item-title, .cm-thread {
-            color: #60a5fa;
-            font-weight: 600;
-            text-decoration: none;
-        }
-
-        .cm-text {
-            margin-top: 5px;
-            color: #e5e7eb;
-            font-size: 0.95rem;
-        }
-
-        .empty {
-            color: #9ca3af;
-            font-style: italic;
-        }
-
-        .loading {
-            color: #38bdf8;
-        }
-
-        .error {
-            color: #ef4444;
-            font-weight: bold;
-        }
-
-        /* BACK LINK */
-        a.back {
-            display: inline-block;
-            margin-top: 25px;
-            color: #22c55e;
-            font-weight: bold;
-            text-decoration: none;
-            font-size: 1rem;
-        }
-
-        a.back:hover {
-            text-decoration: underline;
-        }
-
-        /* RESPONSIVE */
-        @media (max-width: 600px) {
-            .profile-header {
-                flex-direction: column;
-                text-align: center;
-            }
-            .dota-header {
-                flex-direction: column;
-                text-align: center;
-            }
-        }
-    </style>
+</style>
 </head>
 
 <body>
 
 <div class="container">
+    <h1>Форум</h1>
 
-    <h1>Профил на корисникот</h1>
+    <a href="new-thread.html" class="new-thread">➕ Криирај нова тема</a>
 
-    <!-- PROFILE HEADER -->
-    <div class="profile-header">
-        <div id="p_avatar">U</div>
-
-        <div class="profile-info">
-            <div><span class="label">Име:</span> <span id="p_name">Loading...</span></div>
-            <div><span class="label">Улога:</span> <span id="p_role">...</span></div>
-            <div><span class="label">Бан:</span> <span id="p_banned">...</span></div>
-            <div><span class="label">Креиран:</span> <span id="p_created">...</span></div>
-            <div><span class="label">Земја:</span> <span id="p_country">...</span></div>
-        </div>
-    </div>
-
-    <!-- DOTA PANEL -->
-    <div class="section-title">Dota 2 Профил</div>
-    <div id="dotaProfile">Вчитувам...</div>
-
-    <!-- THREADS -->
-    <div class="section-title">Теми на корисникот (<span id="threadCountProfile">0</span>)</div>
-    <div id="userThreads"></div>
-
-    <!-- COMMENTS -->
-    <div class="section-title">Коментари (<span id="commentCountProfile">0</span>)</div>
-    <div id="userComments"></div>
-
-    <a class="back" href="main.html">⟵ Назад кон почетна</a>
+    <div id="threadList"></div>
 </div>
 
 <!-- FIREBASE -->
@@ -263,7 +132,7 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
 <script src="js/firebase-config.js"></script>
-<script src="js/profile.js"></script>
+<script src="js/forum.js"></script>
 
 </body>
 </html>
