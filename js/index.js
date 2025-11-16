@@ -27,30 +27,34 @@ function escapeHtml(text) {
 }
 
 ///////////////////////////////////////////////////////
-// CLEAN STEAM TOKEN FROM URL
+// CLEAN STEAM TOKEN FROM URL (ONLY IN INDEX)
 ///////////////////////////////////////////////////////
+let hasSteamToken = false;
 (function cleanSteamToken() {
   const url = new URL(window.location.href);
   if (url.searchParams.get("steamToken")) {
+    hasSteamToken = true; // important!
     url.searchParams.delete("steamToken");
     window.history.replaceState({}, document.title, url.toString());
   }
 })();
 
 ///////////////////////////////////////////////////////
-// AUTH FIX – CHECK IF USER IS LOGGED IN
+// AUTH FIX — RUN ONLY IF NO STEAM TOKEN
 ///////////////////////////////////////////////////////
-auth.onAuthStateChanged(user => {
-  if (!user) return; // DO NOT redirect to club gate
+if (!hasSteamToken) {
+  auth.onAuthStateChanged(async user => {
+    if (!user) return;
 
-  const isSteam = user.uid.startsWith("steam:");
+    // allow steam users without email
+    const isSteam = user.uid.startsWith("steam:");
 
-  // email users must verify
-  if (!isSteam && user.email && !user.emailVerified) return;
+    if (!isSteam && user.email && !user.emailVerified) return;
 
-  // 🔥 user is fully logged in
-  window.location.href = "main.html";
-});
+    // if already logged → go to main
+    window.location.href = "main.html";
+  });
+}
 
 ///////////////////////////////////////////////////////
 // CLUB GATE
@@ -66,14 +70,14 @@ function checkCode() {
   }
 }
 
-// If user previously passed club gate – skip it
+// skip code if already passed
 if (localStorage.getItem("clubAccess") === "yes") {
   clubGate.style.display = "none";
   loginBox.style.display = "block";
 }
 
 ///////////////////////////////////////////////////////
-// SWITCH LOGIN/REGISTER
+// SWITCH LOGIN / REGISTER
 ///////////////////////////////////////////////////////
 function showRegister() {
   setStatus(loginStatus, "");
@@ -94,7 +98,6 @@ function showLogin() {
 ///////////////////////////////////////////////////////
 async function previewSteamId() {
   const id = document.getElementById("regSteamId").value.trim();
-
   if (!id) return alert("Внеси Steam32 ID.");
 
   steamPreviewBox.style.display = "block";
@@ -104,37 +107,31 @@ async function previewSteamId() {
     const res  = await fetch(`https://api.opendota.com/api/players/${id}`);
     const data = await res.json();
 
-    if (!data || !data.profile) {
-      steamPreviewBox.style.display = "none";
-      steamPreviewBox.innerHTML = "";
-      return alert("Не е пронајден играч со ова Steam32 ID.");
-    }
+    if (!data || !data.profile)
+      return alert("Не постои Dota профил со ова ID.");
 
-    const nameFromSteam   = data.profile.personaname || "";
-    const avatarFromSteam = data.profile.avatarfull || "";
+    const name  = data.profile.personaname || "";
+    const avatar = data.profile.avatarfull || "";
 
-    currentSteamAvatar = avatarFromSteam;
+    currentSteamAvatar = avatar;
 
-    const usernameInput = document.getElementById("regUsername");
-
-    if (!usernameInput.value.trim() && nameFromSteam)
-      usernameInput.value = nameFromSteam;
+    if (!regUsername.value.trim() && name)
+      regUsername.value = name;
 
     steamPreviewBox.innerHTML = `
-      <strong>Пронајден Dota профил:</strong><br>
-      Име: ${escapeHtml(nameFromSteam)}<br>
+      <strong>Детали:</strong><br>
+      Име: ${escapeHtml(name)}<br>
       Dota ID: ${data.profile.account_id}
-      ${avatarFromSteam ? `<img src="${avatarFromSteam}" />` : ""}
+      ${avatar ? `<img src="${avatar}" />` : ""}
     `;
 
-  } catch (err) {
-    console.error(err);
-    alert("Грешка при поврзување со OpenDota.");
+  } catch {
+    alert("OpenDota не работи моментално.");
   }
 }
 
 ///////////////////////////////////////////////////////
-// REGISTER USER
+// REGISTER
 ///////////////////////////////////////////////////////
 async function register() {
   const username = regUsername.value.trim();
@@ -143,17 +140,13 @@ async function register() {
   const pass2    = regConfirmPass.value.trim();
   const steamId  = regSteamId.value.trim();
 
-  setStatus(regStatus, "");
-
   if (!username || !email || !pass || !pass2 || !steamId)
-    return setStatus(regStatus, "Пополнете ги сите полиња.", true);
+    return setStatus(regStatus, "Сите полиња се задолжителни.", true);
 
   if (pass !== pass2)
     return setStatus(regStatus, "Лозинките не се совпаѓаат.", true);
 
   try {
-    setStatus(regStatus, "Се креира профил...");
-
     const userCred = await auth.createUserWithEmailAndPassword(email, pass);
     const user = userCred.user;
 
@@ -165,48 +158,42 @@ async function register() {
       steamId,
       role: "member",
       banned: false,
-      avatarUrl: currentSteamAvatar || "",
+      avatarUrl: currentSteamAvatar,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
       online: true
     });
 
     await user.sendEmailVerification();
-    alert("Провери го email-от за верификација.");
+    alert("Провери email за верификација.");
     showLogin();
 
   } catch (err) {
-    console.error(err);
     setStatus(regStatus, "Грешка: " + err.message, true);
   }
 }
 
 ///////////////////////////////////////////////////////
-// LOGIN USER
+// LOGIN
 ///////////////////////////////////////////////////////
 async function login() {
   const email = loginEmail.value.trim();
   const pass  = loginPass.value.trim();
 
-  setStatus(loginStatus, "");
-
   if (!email || !pass)
     return setStatus(loginStatus, "Внеси email и лозинка.", true);
 
   try {
-    setStatus(loginStatus, "Се логираме...");
-
     const res = await auth.signInWithEmailAndPassword(email, pass);
 
     if (!res.user.emailVerified) {
-      await auth.signOut();
+      auth.signOut();
       return setStatus(loginStatus, "Прво потврди го email-от.", true);
     }
 
     window.location.href = "main.html";
 
   } catch (err) {
-    console.error(err);
     setStatus(loginStatus, "Грешка: " + err.message, true);
   }
 }
@@ -220,22 +207,19 @@ function openResetModal() {
 
 function closeResetModal() {
   document.getElementById("resetModal").style.display = "none";
-  document.getElementById("resetStatus").textContent = "";
-  document.getElementById("resetEmail").value = "";
+  resetStatus.textContent = "";
+  resetEmail.value = "";
 }
 
 async function sendResetEmail() {
-  const email       = resetEmail.value.trim();
-  const resetStatus = document.getElementById("resetStatus");
-
-  if (!email)
+  if (!resetEmail.value.trim())
     return setStatus(resetStatus, "Внеси email.", true);
 
   try {
-    await auth.sendPasswordResetEmail(email);
-    setStatus(resetStatus, "Испратен е линк за ресетирање!");
+    await auth.sendPasswordResetEmail(resetEmail.value.trim());
+    setStatus(resetStatus, "Испратена е порака!", false);
+
   } catch (err) {
-    console.error(err);
     setStatus(resetStatus, "Грешка: " + err.message, true);
   }
 }
