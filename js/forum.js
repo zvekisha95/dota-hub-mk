@@ -1,8 +1,14 @@
 let currentUser = null;
 let userRole = "member";
 
-auth.onAuthStateChanged(async user => {
+// Escape HTML (безбедно)
+function escapeHtml(t) {
+    const d = document.createElement("div");
+    d.textContent = t;
+    return d.innerHTML;
+}
 
+auth.onAuthStateChanged(async user => {
     if (!user) {
         location.href = "index.html";
         return;
@@ -10,12 +16,13 @@ auth.onAuthStateChanged(async user => {
 
     currentUser = user;
 
-    // FIX — add profile link
+    // FIX — поправен линк кон профил
     const profileLink = document.getElementById("profileLink");
     if (profileLink) {
         profileLink.href = `profile.html?id=${currentUser.uid}`;
     }
 
+    // Load user data
     const doc = await db.collection("users").doc(user.uid).get();
     const data = doc.exists ? doc.data() : {};
 
@@ -30,36 +37,69 @@ auth.onAuthStateChanged(async user => {
     loadThreads();
 });
 
+// Load all threads
 async function loadThreads() {
     const list = document.getElementById("threadList");
-    list.innerHTML = `<div>Вчитувам...</div>`;
+    list.innerHTML = `<div class="loading">Вчитувам теми...</div>`;
 
-    const snap = await db.collection("threads")
-        .orderBy("createdAt", "desc")
-        .get();
+    try {
+        const snap = await db.collection("threads")
+            .orderBy("createdAt", "desc")
+            .get();
 
-    list.innerHTML = "";
+        if (snap.empty) {
+            list.innerHTML = `<div class="empty">Нема објавени теми.</div>`;
+            return;
+        }
 
-    snap.forEach(doc => {
-        const t = doc.data();
-        const id = doc.id;
+        list.innerHTML = "";
 
-        const html = `
-            <div class="thread-card">
-                <div class="thread-header">
-                    <a class="thread-title" href="thread.html?id=${id}">
-                        ${t.title}
-                    </a>
+        snap.forEach(doc => {
+            const t = doc.data();
+            const id = doc.id;
+
+            const title = escapeHtml(t.title || "Без наслов");
+            const author = escapeHtml(t.author || "Корисник");
+            const authorId = t.authorId || "";
+            const comments = t.comments || 0;
+
+            // Датум
+            const date = t.createdAt
+                ? t.createdAt.toDate().toLocaleString("mk-MK")
+                : "—";
+
+            // Темплејт
+            const html = `
+                <div class="thread-card">
+                    <div class="thread-horizontal">
+
+                        <div class="avatar small"
+                             style="background:hsl(${(author.charCodeAt(0) * 7) % 360},70%,55%)">
+                            ${author[0]?.toUpperCase()}
+                        </div>
+
+                        <a class="thread-title" href="thread.html?id=${id}">
+                            ${title}
+                        </a>
+
+                        <span class="thread-user">
+                            <a href="profile.html?id=${authorId}" style="color:#9ca3af;text-decoration:none;">
+                                ${author}
+                            </a>
+                        </span>
+
+                        <span class="thread-date">${date}</span>
+
+                        <span class="thread-comments">${comments} коментари</span>
+                    </div>
                 </div>
+            `;
 
-                <div class="thread-meta">
-                    <a href="profile.html?id=${t.authorId}">${t.author}</a> • 
-                    ${t.createdAt?.toDate().toLocaleString("mk-MK")} • 
-                    ${t.comments || 0} коментари
-                </div>
-            </div>
-        `;
+            list.insertAdjacentHTML("beforeend", html);
+        });
 
-        list.insertAdjacentHTML("beforeend", html);
-    });
+    } catch (err) {
+        console.error(err);
+        list.innerHTML = `<div class="error">Грешка при читање на темите.</div>`;
+    }
 }
