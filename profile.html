@@ -66,6 +66,84 @@
             padding-bottom: 5px;
         }
 
+        /* ===================================================
+           DOTA 2 PROFILE PANEL
+        =================================================== */
+
+        #dotaProfile {
+            margin-top: 25px;
+            padding: 20px;
+            background: rgba(30, 41, 59, 0.6);
+            border-radius: 12px;
+            border: 1px solid rgba(148,163,184,0.3);
+        }
+
+        .dota-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .dota-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+        }
+
+        .dota-info-block h2 {
+            margin: 0;
+            font-size: 1.4rem;
+        }
+
+        .dota-link {
+            color: #60a5fa;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .dota-grid {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .dota-card {
+            flex: 1;
+            min-width: 180px;
+            padding: 12px;
+            border-radius: 10px;
+            background: rgba(51,65,85,0.6);
+            border: 1px solid rgba(148,163,184,0.2);
+        }
+
+        .dota-card h3 {
+            margin-top: 0;
+        }
+
+        .dota-rank {
+            width: 70px;
+            margin-top: 8px;
+        }
+
+        .recent-title {
+            margin-top: 25px;
+        }
+
+        .recent-matches .match-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            margin-top: 5px;
+            background: rgba(51,65,85,0.5);
+            border-radius: 6px;
+            border: 1px solid rgba(148,163,184,0.2);
+        }
+
+        /* ===================================================
+           THREADS & COMMENTS
+        =================================================== */
+
         .item, .comment-item {
             background: rgba(34,197,94,0.10);
             padding: 10px 14px;
@@ -119,6 +197,7 @@
 
     <h1>Профил на корисникот</h1>
 
+    <!-- PROFILE HEADER -->
     <div class="profile-header">
         <div id="p_avatar">U</div>
 
@@ -131,11 +210,15 @@
         </div>
     </div>
 
-    <!-- ТЕМИ -->
+    <!-- DOTA PANEL -->
+    <div class="section-title">Dota 2 Профил</div>
+    <div id="dotaProfile">Вчитувам...</div>
+
+    <!-- THREADS -->
     <div class="section-title">Теми на корисникот (<span id="threadCountProfile">0</span>)</div>
     <div id="userThreads"></div>
 
-    <!-- КОМЕНТАРИ -->
+    <!-- COMMENTS -->
     <div class="section-title">Коментари (<span id="commentCountProfile">0</span>)</div>
     <div id="userComments"></div>
 
