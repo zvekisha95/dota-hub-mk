@@ -19,9 +19,7 @@
             --danger: #ef4444;
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
@@ -92,10 +90,7 @@
             transition: 0.2s;
         }
 
-        .top-links a:hover {
-            opacity: 1;
-            color: #bfdbfe;
-        }
+        .top-links a:hover { opacity: 1; color: #bfdbfe; }
 
         /* Main container */
         .container {
@@ -105,9 +100,7 @@
             background: radial-gradient(circle at top, rgba(15,23,42,0.98) 0, rgba(15,23,42,0.96) 45%, rgba(15,23,42,0.94) 100%);
             border-radius: 18px;
             border: 1px solid var(--border-soft);
-            box-shadow:
-              0 0 24px rgba(15,23,42,0.9),
-              0 0 30px rgba(37,99,235,0.45);
+            box-shadow: 0 0 24px rgba(15,23,42,0.9), 0 0 30px rgba(37,99,235,0.45);
         }
 
         .header-row {
@@ -131,7 +124,6 @@
             color: #9ca3af;
         }
 
-        /* New thread button */
         #newThreadBtn {
             display: inline-flex;
             align-items: center;
@@ -146,181 +138,76 @@
             border: 1px solid rgba(191,219,254,0.45);
             box-shadow: 0 0 22px rgba(37,99,235,0.75);
             font-size: 0.95rem;
-            transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+            transition: 0.16s ease;
             white-space: nowrap;
-        }
-
-        #newThreadBtn span.icon {
-            font-size: 1.1rem;
         }
 
         #newThreadBtn:hover {
             transform: translateY(-1px) scale(1.03);
-            filter: brightness(1.08);
             box-shadow: 0 0 30px rgba(59,130,246,0.9);
         }
 
-        /* Forum header strip */
-        .forum-strip {
-            margin-top: 10px;
-            margin-bottom: 16px;
-            padding: 10px 14px;
-            border-radius: 12px;
-            background: radial-gradient(circle at left, rgba(37,99,235,0.35) 0, transparent 55%),
-                        rgba(15,23,42,0.95);
-            border: 1px solid rgba(55,65,81,0.85);
-            display: flex;
-            justify-content: space-between;
+        /* Forum rows */
+        .thread-row {
+            display: grid;
+            grid-template-columns: 48px 1fr 160px 150px 80px;
             align-items: center;
-            font-size: 0.9rem;
-            color: #9ca3af;
-        }
-
-        .forum-strip .badge {
-            padding: 2px 8px;
-            border-radius: 999px;
-            background: rgba(37,99,235,0.2);
-            border: 1px solid rgba(96,165,250,0.6);
-            color: #bfdbfe;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-        }
-
-        /* Thread card */
-        .thread-card {
-            margin-bottom: 16px;
-            padding: 15px 16px 13px 16px;
-            border-radius: 14px;
-            background: radial-gradient(circle at top left, rgba(30,64,175,0.5) 0, rgba(15,23,42,0.95) 40%, rgba(15,23,42,0.96) 100%);
-            border: 1px solid rgba(148,163,184,0.4);
-            box-shadow: 0 0 14px rgba(15,23,42,0.95);
-            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-        }
-
-        .thread-card:hover {
-            transform: translateX(3px);
-            border-color: rgba(96,165,250,0.8);
-            box-shadow: 0 0 24px rgba(59,130,246,0.85);
-        }
-
-        .thread-header {
-            margin-bottom: 8px;
+            gap: 12px;
+            padding: 10px 2px;
         }
 
         .thread-title {
             color: #e0f2fe;
+            font-size: 1rem;
             text-decoration: none;
             font-weight: 600;
-            font-size: 1.1rem;
-            text-shadow: 0 0 10px rgba(96,165,250,0.8);
         }
 
-        .thread-title:hover {
-            text-decoration: underline;
-        }
-
-        .thread-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .author {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .thread-author {
+            color: #93c5fd;
+            text-decoration: none;
             font-size: 0.9rem;
-            color: #e5e7eb;
+        }
+
+        .thread-date {
+            font-size: 0.85rem;
+            color: #9ca3af;
+        }
+
+        .thread-comments {
+            color: #22c55e;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        /* Card */
+        .thread-card {
+            background: radial-gradient(circle at top left, rgba(30,64,175,0.45), rgba(15,23,42,0.95));
+            padding: 14px;
+            margin-bottom: 18px;
+            border-radius: 14px;
+            border: 1px solid rgba(148,163,184,0.4);
+            transition: 0.18s;
+        }
+
+        .thread-card:hover {
+            border-color: rgba(96,165,250,0.8);
+            box-shadow: 0 0 22px rgba(59,130,246,0.7);
         }
 
         .avatar {
-            width: 36px;
-            height: 36px;
+            width: 42px;
+            height: 42px;
             border-radius: 50%;
             background: #1f2937;
+            background-size: cover;
+            background-position: center;
+            font-weight: 700;
+            color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #f9fafb;
-            font-weight: 700;
-            font-size: 1rem;
-            background-size: cover;
-            background-position: center;
             border: 1px solid rgba(191,219,254,0.6);
-            box-shadow: 0 0 12px rgba(129,140,248,0.8);
-        }
-
-        .meta {
-            font-size: 0.8rem;
-            color: #9ca3af;
-            text-align: right;
-        }
-
-        .meta span + span::before {
-            content: " • ";
-            padding: 0 2px;
-        }
-
-        .btn-delete {
-            margin-top: 10px;
-            background: linear-gradient(180deg, #f97373, #b91c1c);
-            border: 1px solid rgba(248,113,113,0.7);
-            padding: 5px 11px;
-            border-radius: 999px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-            color: #fff7f7;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            transition: 0.16s ease;
-        }
-
-        .btn-delete:hover {
-            filter: brightness(1.08);
-            box-shadow: 0 0 14px rgba(248,113,113,0.9);
-        }
-
-        .loading,
-        .empty,
-        .error {
-            text-align: center;
-            padding: 18px 0;
-            font-size: 0.95rem;
-        }
-
-        .loading {
-            color: #93c5fd;
-        }
-
-        .empty {
-            color: #9ca3af;
-            font-style: italic;
-        }
-
-        .error {
-            color: #fca5a5;
-            font-weight: 600;
-        }
-
-        @media (max-width: 700px) {
-            .header-row {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            #newThreadBtn {
-                align-self: stretch;
-                justify-content: center;
-            }
-            .thread-info {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .meta {
-                text-align: left;
-            }
         }
     </style>
 </head>
@@ -337,7 +224,7 @@
 
         <div class="top-links">
             <a href="main.html">Главна</a>
-            <a href="profile.html" style="opacity:0.6;pointer-events:none;">Профил (од форум неактивно)</a>
+            <a href="#" style="opacity:0.6;pointer-events:none;">Профил</a>
         </div>
     </div>
 </div>
@@ -352,22 +239,16 @@
         </div>
 
         <a id="newThreadBtn" href="new-thread.html">
-            <span class="icon">＋</span>
-            <span>Нова тема</span>
+            ＋ Нова тема
         </a>
     </div>
 
-    <div class="forum-strip">
-        <span>Листа на најнови теми по редослед на креирање.</span>
-        <span class="badge">LIVE HUB</span>
-    </div>
-
-    <!-- ОВДЕ JS ГО ПОЛНИ ФОРУМОТ -->
+    <!-- Forum list -->
     <div id="threadList"></div>
 
 </div>
 
-<!-- FIREBASE SDK -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
