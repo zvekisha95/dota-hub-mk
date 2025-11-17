@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="mk">
 <head>
@@ -8,33 +7,39 @@
 
 <style>
 
+:root {
+    --bg-dark: #0c0f16;
+    --bg-panel: #151923;
+    --bg-panel-hover: #1d2330;
+    --border: #1f2533;
+    --text-main: #e5e7eb;
+    --text-soft: #9ca3af;
+    --link: #67b7ff;
+    --accent: #409eff;
+}
+
 body {
     margin: 0;
-    background: radial-gradient(circle at top, #1e293b 0, #020617 55%, #000 100%);
-    color: #e5e7eb;
+    background: var(--bg-dark);
     font-family: system-ui, sans-serif;
+    color: var(--text-main);
 }
 
 /* ================= TOP BAR ================= */
 
 .topbar {
     width: 100%;
-    padding: 10px 20px;
+    padding: 12px 22px;
+    background: #10131a;
+    border-bottom: 1px solid var(--border);
     display: flex;
-    align-items: center;
     justify-content: center;
-    background: radial-gradient(circle at top,
-        rgba(15,23,42,0.9) 0,
-        rgba(15,23,42,0.95) 45%,
-        #020617 100%
-    );
-    border-bottom: 1px solid rgba(30,64,175,0.8);
-    box-shadow: 0 6px 20px rgba(15,23,42,0.8);
+    box-shadow: 0 4px 18px rgba(0,0,0,0.45);
 }
 
 .topbar-inner {
     width: 100%;
-    max-width: 1050px;
+    max-width: 1150px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -47,157 +52,161 @@ body {
 }
 
 .logo-badge {
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
-    background: radial-gradient(circle at 30% 0%, #bfdbfe 0, #1d4ed8 45%, #020617 100%);
-    box-shadow: 0 0 16px rgba(59,130,246,0.9);
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #66aaff, #194b8d);
     display: flex;
     align-items: center;
     justify-content: center;
+    color: white;
     font-weight: 800;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
+    box-shadow: 0 0 12px rgba(102,170,255,0.6);
 }
 
 .logo-text {
     font-weight: 700;
-    font-size: 1.2rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #bfdbfe;
-    text-shadow: 0 0 18px rgba(96,165,250,0.85);
+    letter-spacing: 0.07em;
+    font-size: 1.1rem;
+    color: #67b7ff;
+    text-shadow: 0 0 10px rgba(103,183,255,0.4);
 }
 
 .top-links {
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 20px;
 }
 
 .top-links a {
-    color: #e5e7eb;
+    color: var(--text-soft);
     text-decoration: none;
-    font-size: 0.9rem;
-    opacity: 0.85;
-    transition: 0.2s;
-    white-space: nowrap;
+    font-size: 0.92rem;
+    transition: 0.17s;
 }
 
 .top-links a:hover {
-    opacity: 1;
-    color: #bfdbfe;
+    color: var(--link);
 }
 
-/* DONATE BUTTON */
+/* Donate */
 .donate-btn {
-    background: linear-gradient(180deg, #3b82f6, #1e40af);
     padding: 7px 14px;
-    border-radius: 10px;
-    color: #e0f2fe !important;
-    font-weight: 700;
-    font-size: 0.9rem;
-    border: 1px solid rgba(191,219,254,0.45);
+    border-radius: 8px;
+    background: linear-gradient(180deg, #3b82f6, #1e40af);
+    color: #e7f0ff !important;
+    font-weight: 600;
     text-decoration: none;
-    box-shadow: 0 0 18px rgba(59,130,246,0.85);
-    transition: 0.15s ease-in-out;
 }
 
-.donate-btn:hover {
-    transform: scale(1.07);
-    filter: brightness(1.15);
-    box-shadow: 0 0 26px rgba(96,165,250,0.95);
-}
-
-/* ============= FORUM LIST ============= */
+/* ================= PAGE WRAPPER ================= */
 
 .container {
-    max-width: 1100px;
+    max-width: 1150px;
     margin: 40px auto;
-    background: rgba(15,23,42,0.95);
-    padding: 20px 30px;
-    border-radius: 16px;
-    border: 1px solid rgba(55,65,81,0.6);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+    background: var(--bg-panel);
+    padding: 26px 32px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
 }
 
+/* Header */
 h1 {
-    text-align: center;
-    margin-bottom: 30px;
+    margin-top: 0;
+    margin-bottom: 16px;
+    color: #67b7ff;
+    text-shadow: 0 0 12px rgba(103,183,255,0.4);
 }
 
 .new-thread {
-    color: #22c55e;
-    text-decoration: none;
-    font-weight: 600;
-    margin-bottom: 15px;
     display: inline-block;
+    margin-bottom: 18px;
+    color: #4ade80;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 0.95rem;
 }
 
 .new-thread:hover {
     text-decoration: underline;
 }
 
-/* ===== BLIZZARD THREAD CARD STYLE ===== */
+/* ================= THREAD LIST ================= */
 
 .thread-card {
-    padding: 16px 18px;
-    background: #111827;
-    border: 1px solid #1f2937;
-    border-radius: 8px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    padding: 14px 18px;
+    border-radius: 10px;
     margin-bottom: 14px;
-    transition: 0.15s;
+    transition: 0.18s;
 }
 
 .thread-card:hover {
-    background: #1a2333;
-    border-color: #374151;
+    background: var(--bg-panel-hover);
+    border-color: #2c3547;
 }
 
 .thread-horizontal {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
 }
 
 .avatar.small {
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     border-radius: 4px;
+    background: #222836;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    background: #374151;
-    color: #f3f4f6;
-    font-size: 0.95rem;
+    color: #9ca3af;
+    font-size: 1rem;
 }
 
 .thread-title {
     flex: 1;
-    color: #f3f4f6;
-    text-decoration: none;
-    font-size: 1rem;
+    color: #e7f0ff;
     font-weight: 600;
+    font-size: 1.05rem;
+    text-decoration: none;
 }
 
 .thread-title:hover {
-    color: #93c5fd;
+    color: #67b7ff;
 }
 
 .thread-user a {
-    color: #9ca3af;
     font-size: 0.85rem;
+    color: var(--text-soft);
     text-decoration: none;
 }
 
 .thread-date {
-    color: #6b7280;
     font-size: 0.85rem;
+    color: #6b7280;
 }
 
 .thread-comments {
-    color: #9ca3af;
     font-size: 0.85rem;
+    color: #8b93a2;
+}
+
+.loading {
+    color: #67b7ff;
+}
+
+.empty {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+.error {
+    color: #ef4444;
 }
 
 </style>
@@ -205,8 +214,10 @@ h1 {
 
 <body>
 
+<!-- ================= TOP BAR ================= -->
 <div class="topbar">
   <div class="topbar-inner">
+
     <div class="logo">
       <div class="logo-badge">Z</div>
       <div class="logo-text">Zvekisha Dota Hub</div>
@@ -216,11 +227,13 @@ h1 {
       <a href="main.html">Главна</a>
       <a href="#" id="profileLink">Профил</a>
       <a href="#" onclick="logoutUser()">Одјави се</a>
-      <a href="https://www.paypal.com/paypalme/Zvekisha" target="_blank" class="donate-btn">🅿 Donate</a>
+      <a href="https://www.paypal.com/paypalme/Zvekisha" target="_blank" class="donate-btn">Donate</a>
     </div>
+
   </div>
 </div>
 
+<!-- ================= CONTENT ================= -->
 <div class="container">
 
     <h1>Форум</h1>
@@ -231,6 +244,7 @@ h1 {
 
 </div>
 
+<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -246,3 +260,4 @@ function logoutUser() {
 
 </body>
 </html>
+
