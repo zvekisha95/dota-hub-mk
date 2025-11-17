@@ -1,20 +1,46 @@
-const url = new URL(window.location.href);
-const threadId = url.searchParams.get("id");
+/****************************************************
+ * THREAD.JS – 100% FIXED
+ ****************************************************/
 
-if (!threadId) {
-    document.body.innerHTML = "<h1>Грешка: Нема ID.</h1>";
+let currentUser = null;
+
+/****************************************************
+ * GET THREAD ID
+ ****************************************************/
+function getThreadId() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("id"); // ← ВАЖНО!!!
 }
 
+/****************************************************
+ * AUTH HANDLER
+ ****************************************************/
 auth.onAuthStateChanged(async user => {
-    if (!user) location.href = "index.html";
+    if (!user) {
+        location.href = "index.html";
+        return;
+    }
 
-    loadThread();
-    loadComments();
+    currentUser = user;
+
+    const threadId = getThreadId();
+
+    if (!threadId) {
+        alert("Грешка: Нема ID.");
+        location.href = "forum.html";
+        return;
+    }
+
+    loadThread(threadId);
+    loadComments(threadId);
 });
 
+/****************************************************
+ * LOAD THREAD CONTENT
+ ****************************************************/
+async function loadThread(id) {
+    const doc = await db.collection("threads").doc(id).get();
 
-async function loadThread() {
-    const doc = await db.collection("threads").doc(threadId).get();
     if (!doc.exists) {
         document.getElementById("threadTitle").textContent = "Темата не постои.";
         return;
@@ -22,60 +48,69 @@ async function loadThread() {
 
     const t = doc.data();
 
-    document.getElementById("threadTitle").textContent = t.title;
-    document.getElementById("threadContent").innerHTML = t.content;
+    document.getElementById("threadTitle").textContent = t.title || "Без наслов";
+    document.getElementById("threadContent").innerHTML = t.content || "";
 }
 
-
-async function loadComments() {
-    const list = document.getElementById("comments");
-    list.innerHTML = "Вчитувам...";
+/****************************************************
+ * LOAD COMMENTS
+ ****************************************************/
+async function loadComments(id) {
+    const box = document.getElementById("comments");
+    box.innerHTML = "Вчитувам...";
 
     const snap = await db.collection("threads")
-        .doc(threadId)
+        .doc(id)
         .collection("comments")
         .orderBy("createdAt", "asc")
         .get();
 
     if (snap.empty) {
-        list.innerHTML = "<i>Нема коментари.</i>";
+        box.innerHTML = "<i>Нема коментари.</i>";
         return;
     }
 
-    list.innerHTML = "";
+    box.innerHTML = "";
 
     snap.forEach(doc => {
         const c = doc.data();
-        const html = `
+        const text = c.text || "";
+        const author = c.author || "Корисник";
+
+        box.innerHTML += `
             <div class="comment">
-                <strong>${c.author}</strong><br>
-                ${c.text}<br>
-                <small>${c.createdAt.toDate().toLocaleString("mk-MK")}</small>
+                <b>${author}</b><br>
+                ${text}
             </div>
         `;
-        list.insertAdjacentHTML("beforeend", html);
     });
 }
 
-
+/****************************************************
+ * POST COMMENT
+ ****************************************************/
 async function postComment() {
     const text = document.getElementById("commentInput").value.trim();
-    if (!text) return alert("Празен коментар");
+    const threadId = getThreadId();
 
-    const user = auth.currentUser;
-    const userDoc = await db.collection("users").doc(user.uid).get();
-    const u = userDoc.data();
+    if (!text) {
+        alert("Внеси текст.");
+        return;
+    }
+
+    const userDoc = await db.collection("users").doc(currentUser.uid).get();
+    const userData = userDoc.exists ? userDoc.data() : {};
 
     await db.collection("threads")
         .doc(threadId)
         .collection("comments")
         .add({
-            author: u.username || "Корисник",
-            userId: user.uid,
             text,
+            author: userData.username || currentUser.email || "Корисник",
+            authorId: currentUser.uid,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
     document.getElementById("commentInput").value = "";
-    loadComments();
+    loadComments(threadId);
 }
