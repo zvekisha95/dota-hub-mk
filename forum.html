@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="mk">
 <head>
@@ -124,57 +125,79 @@ h1 {
     margin-bottom: 30px;
 }
 
+.new-thread {
+    color: #22c55e;
+    text-decoration: none;
+    font-weight: 600;
+    margin-bottom: 15px;
+    display: inline-block;
+}
+
+.new-thread:hover {
+    text-decoration: underline;
+}
+
+/* ===== BLIZZARD THREAD CARD STYLE ===== */
+
 .thread-card {
-    padding: 14px;
-    background: rgba(30,41,59,0.45);
-    border: 1px solid rgba(148,163,184,0.4);
-    border-radius: 12px;
+    padding: 16px 18px;
+    background: #111827;
+    border: 1px solid #1f2937;
+    border-radius: 8px;
     margin-bottom: 14px;
     transition: 0.15s;
 }
 
 .thread-card:hover {
-    border-color: #60a5fa;
-    background: rgba(30,41,59,0.65);
-    transform: translateY(-2px);
+    background: #1a2333;
+    border-color: #374151;
 }
 
 .thread-horizontal {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
 }
 
 .avatar.small {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    background: #334155;
-    color: white;
+    background: #374151;
+    color: #f3f4f6;
+    font-size: 0.95rem;
 }
 
 .thread-title {
     flex: 1;
-    color: #e0f2fe;
-    font-size: 1.1rem;
+    color: #f3f4f6;
     text-decoration: none;
+    font-size: 1rem;
     font-weight: 600;
 }
 
-.thread-meta {
-    margin-top: 4px;
-    color: #94a3b8;
+.thread-title:hover {
+    color: #93c5fd;
+}
+
+.thread-user a {
+    color: #9ca3af;
+    font-size: 0.85rem;
+    text-decoration: none;
+}
+
+.thread-date {
+    color: #6b7280;
     font-size: 0.85rem;
 }
 
-.thread-meta a {
-    color: #60a5fa;
-    text-decoration: none;
-    font-weight: 600;
+.thread-comments {
+    color: #9ca3af;
+    font-size: 0.85rem;
 }
 
 </style>
@@ -207,7 +230,6 @@ h1 {
     <div id="threadList"></div>
 
 </div>
-
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
