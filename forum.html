@@ -5,239 +5,209 @@
     <title>Форум – Zvekisha Dota Hub</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<style>
 
-    <style>
-        :root {
-            --bg-main: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%);
-            --panel: rgba(15,23,42,0.92);
-            --border-soft: rgba(148,163,184,0.35);
-            --accent: #60a5fa;
-            --accent-soft: rgba(96,165,250,0.35);
-            --danger: #ef4444;
-        }
+body {
+    margin: 0;
+    background: radial-gradient(circle at top, #1e293b 0, #020617 55%, #000 100%);
+    color: #e5e7eb;
+    font-family: system-ui, sans-serif;
+}
 
-        * { box-sizing: border-box; }
+/* ================= TOP BAR ================= */
 
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background:
-              radial-gradient(circle at 0% 0%, rgba(56,189,248,0.22) 0, transparent 45%),
-              radial-gradient(circle at 100% 0%, rgba(129,140,248,0.25) 0, transparent 50%),
-              var(--bg-main);
-            color: #e5e7eb;
-            font-family: 'Oxanium', system-ui, sans-serif;
-        }
+.topbar {
+    width: 100%;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at top,
+        rgba(15,23,42,0.9) 0,
+        rgba(15,23,42,0.95) 45%,
+        #020617 100%
+    );
+    border-bottom: 1px solid rgba(30,64,175,0.8);
+    box-shadow: 0 6px 20px rgba(15,23,42,0.8);
+}
 
-        .topbar {
-            width: 100%;
-            padding: 10px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: radial-gradient(circle at top, rgba(15,23,42,0.9) 0, rgba(15,23,42,0.95) 45%, #020617 100%);
-            border-bottom: 1px solid rgba(30,64,175,0.8);
-            box-shadow: 0 6px 20px rgba(15,23,42,0.8);
-        }
+.topbar-inner {
+    width: 100%;
+    max-width: 1050px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
 
-        .topbar-inner {
-            width: 100%;
-            max-width: 1050px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+.logo-badge {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: radial-gradient(circle at 30% 0%, #bfdbfe 0, #1d4ed8 45%, #020617 100%);
+    box-shadow: 0 0 16px rgba(59,130,246,0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.2rem;
+}
 
-        .logo-badge {
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
-            background: radial-gradient(circle at 30% 0%, #bfdbfe 0, #1d4ed8 45%, #020617 100%);
-            box-shadow: 0 0 16px rgba(59,130,246,0.9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            font-size: 1.2rem;
-            color: #e5e7eb;
-        }
+.logo-text {
+    font-weight: 700;
+    font-size: 1.2rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #bfdbfe;
+    text-shadow: 0 0 18px rgba(96,165,250,0.85);
+}
 
-        .logo-text {
-            font-weight: 700;
-            font-size: 1.2rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: #bfdbfe;
-            text-shadow: 0 0 18px rgba(96,165,250,0.85);
-        }
+.top-links {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
 
-        .top-links {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-        }
+.top-links a {
+    color: #e5e7eb;
+    text-decoration: none;
+    font-size: 0.9rem;
+    opacity: 0.85;
+    transition: 0.2s;
+    white-space: nowrap;
+}
 
-        .top-links a {
-            color: #e5e7eb;
-            text-decoration: none;
-            font-size: 0.9rem;
-            opacity: 0.85;
-            transition: 0.2s;
-        }
+.top-links a:hover {
+    opacity: 1;
+    color: #bfdbfe;
+}
 
-        .top-links a:hover { opacity: 1; color: #bfdbfe; }
+/* DONATE BUTTON */
+.donate-btn {
+    background: linear-gradient(180deg, #3b82f6, #1e40af);
+    padding: 7px 14px;
+    border-radius: 10px;
+    color: #e0f2fe !important;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border: 1px solid rgba(191,219,254,0.45);
+    text-decoration: none;
+    box-shadow: 0 0 18px rgba(59,130,246,0.85);
+    transition: 0.15s ease-in-out;
+}
 
-        /* DONATE BUTTON */
-        .donate-btn {
-            background: linear-gradient(180deg, #3b82f6, #1e40af);
-            padding: 7px 14px;
-            border-radius: 10px;
-            color: #e0f2fe !important;
-            font-weight: 700;
-            font-size: 0.9rem;
-            border: 1px solid rgba(191,219,254,0.45);
-            text-decoration: none;
-            box-shadow: 0 0 18px rgba(59,130,246,0.85);
-            transition: 0.15s ease-in-out;
-            white-space: nowrap;
-            margin-left: 10px;
-        }
+.donate-btn:hover {
+    transform: scale(1.07);
+    filter: brightness(1.15);
+    box-shadow: 0 0 26px rgba(96,165,250,0.95);
+}
 
-        .donate-btn:hover {
-            transform: scale(1.07);
-            filter: brightness(1.15);
-            box-shadow: 0 0 26px rgba(96,165,250,0.95);
-        }
+/* ============= FORUM LIST ============= */
 
-        .container {
-            max-width: 1050px;
-            margin: 28px auto 40px auto;
-            padding: 22px 26px 28px 26px;
-            background: radial-gradient(circle at top, rgba(15,23,42,0.98) 0, rgba(15,23,42,0.96) 45%, rgba(15,23,42,0.94) 100%);
-            border-radius: 18px;
-            border: 1px solid var(--border-soft);
-            box-shadow: 0 0 24px rgba(15,23,42,0.9), 0 0 30px rgba(37,99,235,0.45);
-        }
+.container {
+    max-width: 1100px;
+    margin: 40px auto;
+    background: rgba(15,23,42,0.95);
+    padding: 20px 30px;
+    border-radius: 16px;
+    border: 1px solid rgba(55,65,81,0.6);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+}
 
-        .header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
+h1 {
+    text-align: center;
+    margin-bottom: 30px;
+}
 
-        .title-block h1 {
-            margin: 0;
-            font-size: 1.8rem;
-            color: #bfdbfe;
-            text-shadow: 0 0 14px rgba(129,140,248,0.8);
-        }
+.thread-card {
+    padding: 14px;
+    background: rgba(30,41,59,0.45);
+    border: 1px solid rgba(148,163,184,0.4);
+    border-radius: 12px;
+    margin-bottom: 14px;
+    transition: 0.15s;
+}
 
-        .title-sub {
-            margin-top: 4px;
-            font-size: 0.9rem;
-            color: #9ca3af;
-        }
+.thread-card:hover {
+    border-color: #60a5fa;
+    background: rgba(30,41,59,0.65);
+    transform: translateY(-2px);
+}
 
-        #newThreadBtn {
-            display: inline-flex;
-            padding: 9px 16px;
-            background: linear-gradient(180deg, #3b82f6, #1e40af);
-            color: #e0f2fe;
-            font-weight: 600;
-            border-radius: 12px;
-            border: 1px solid rgba(191,219,254,0.45);
-            box-shadow: 0 0 22px rgba(37,99,235,0.75);
-            text-decoration: none;
-            transition: 0.16s ease;
-        }
+.thread-horizontal {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
 
-        #newThreadBtn:hover {
-            transform: translateY(-1px) scale(1.03);
-            box-shadow: 0 0 30px rgba(59,130,246,0.9);
-        }
+.avatar.small {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    background: #334155;
+    color: white;
+}
 
-        .thread-card {
-            background: radial-gradient(circle at top left, rgba(30,64,175,0.45), rgba(15,23,42,0.95));
-            padding: 14px;
-            margin-bottom: 18px;
-            border-radius: 14px;
-            border: 1px solid rgba(148,163,184,0.4);
-            transition: 0.18s;
-        }
+.thread-title {
+    flex: 1;
+    color: #e0f2fe;
+    font-size: 1.1rem;
+    text-decoration: none;
+    font-weight: 600;
+}
 
-        .thread-card:hover {
-            border-color: rgba(96,165,250,0.8);
-            box-shadow: 0 0 22px rgba(59,130,246,0.7);
-        }
+.thread-meta {
+    margin-top: 4px;
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
 
-        .thread-title {
-            color: #e0f2fe;
-            font-size: 1.1rem;
-            font-weight: 600;
-            text-decoration: none;
-        }
+.thread-meta a {
+    color: #60a5fa;
+    text-decoration: none;
+    font-weight: 600;
+}
 
-        .thread-meta {
-            font-size: 0.85rem;
-            color: #9ca3af;
-            margin-top: 4px;
-        }
-
-        .thread-meta a {
-            color: #93c5fd;
-            text-decoration: none;
-            font-weight: 600;
-        }
-    </style>
+</style>
 </head>
 
 <body>
 
-<!-- TOP BAR -->
 <div class="topbar">
-    <div class="topbar-inner">
-
-        <div class="logo">
-            <div class="logo-badge">Z</div>
-            <div class="logo-text">Zvekisha Dota Hub</div>
-        </div>
-
-        <div class="top-links">
-            <a href="main.html">Главна</a>
-            <a href="#" id="profileLink">Профил</a>
-            <a href="#" onclick="logoutUser()">Одјави се</a>
-
-            <!-- DONATE BUTTON AFTER LOGOUT -->
-            <a href="https://www.paypal.com/paypalme/Zvekisha" target="_blank" class="donate-btn">🅿 Donate</a>
-        </div>
-
+  <div class="topbar-inner">
+    <div class="logo">
+      <div class="logo-badge">Z</div>
+      <div class="logo-text">Zvekisha Dota Hub</div>
     </div>
+
+    <div class="top-links">
+      <a href="main.html">Главна</a>
+      <a href="#" id="profileLink">Профил</a>
+      <a href="#" onclick="logoutUser()">Одјави се</a>
+      <a href="https://www.paypal.com/paypalme/Zvekisha" target="_blank" class="donate-btn">🅿 Donate</a>
+    </div>
+  </div>
 </div>
 
-<!-- MAIN -->
 <div class="container">
 
-    <div class="header-row">
-        <div class="title-block">
-            <h1>Форум</h1>
-            <div class="title-sub">Разговори, build-ови, тактики и мемиња за Dota 2.</div>
-        </div>
+    <h1>Форум</h1>
 
-        <a id="newThreadBtn" href="new-thread.html">＋ Нова тема</a>
-    </div>
+    <a href="new-thread.html" class="new-thread">➕ Нова тема</a>
 
     <div id="threadList"></div>
 
 </div>
+
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
