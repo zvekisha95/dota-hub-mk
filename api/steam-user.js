@@ -4,74 +4,47 @@ const fetch = require("node-fetch");
 module.exports = async (req, res) => {
   try {
     const { steamId } = req.query;
+    if (!steamId) return res.status(400).json({ success: false, error: "No steamId" });
 
-    if (!steamId) {
-      return res.status(400).json({ error: "Missing steamId" });
-    }
-
-    // ============== 1) Основни Steam податоци (OpenDota) ==============
+    // 1. Основни податоци + MMR + ранг
     const playerRes = await fetch(`https://api.opendota.com/api/players/${steamId}`);
-    const playerData = await playerRes.json();
+    const player = await playerRes.json();
 
-    // Ако нема профил
-    if (!playerData || !playerData.profile) {
-      return res.status(404).json({ error: "Player not found on OpenDota" });
+    // 2. Win/Loss
+    const wlRes = await fetch(`https://api.opendota.com/api/players/${steamId}/wl`);
+    const wl = await wlRes.json();
+
+    // 3. Последни мечиви
+    const recentRes = await fetch(`https://api.opendota.com/api/players/${steamId}/recentMatches`);
+    const recentMatches = await recentRes.json();
+
+    // Ако OpenDota не го најде играчот
+    if (player?.error || player?.profile === undefined) {
+      return res.status(404).json({ success: false, error: "Player not found" });
     }
 
-    const profile = playerData.profile;
-
-    // ============== 2) Rank / MMR ==============
-    const rankTier = playerData.rank_tier || null;
-    const leaderboardRank = playerData.leaderboard_rank || null;
-    const soloMMR = playerData.solo_competitive_rank || null;
-    const partyMMR = playerData.competitive_rank || null;
-
-    // ============== 3) Win/Loss статистика ==============
-    const wlRes = await fetch(`https://api.opendota.com/api/players/${steamId}/wl`);
-    const wlData = await wlRes.json();
-
-    // ============== 4) Напредни OpenDota податоци ==============
-    const recentMatchesRes = await fetch(`https://api.opendota.com/api/players/${steamId}/recentMatches`);
-    const recentMatches = await recentMatchesRes.json();
-
-    // ============== 5) Состави финален објект ==============
-    const fullData = {
+    res.json({
       success: true,
-      steamId: steamId,
-
       basic: {
-        name: profile.personaname || "Unknown",
-        avatar: profile.avatarfull || "",
-        avatarMedium: profile.avatarmedium || "",
-        avatarSmall: profile.avatar || "",
-        profileUrl: profile.profileurl || "",
-        steamId64: profile.steamid,
-        country: profile.loccountrycode || null,
+        name: player.profile.personaname || "Unknown",
+        avatar: player.profile.avatarfull || "",
+        profileUrl: player.profile.profileurl || ""
       },
-
       ranks: {
-        rankTier,
-        leaderboardRank,
-        soloMMR,
-        partyMMR
+        rankTier: player.rank_tier || 0,
+        soloMMR: player.solo_competitive_rank || null,
+        partyMMR: player.competitive_rank || null
       },
-
       stats: {
-        wins: wlData?.win || 0,
-        losses: wlData?.lose || 0,
-        winrate:
-          wlData?.win && wlData?.lose
-            ? (wlData.win / (wlData.win + wlData.lose)) * 100
-            : 0
+        wins: wl.win || 0,
+        losses: wl.lose || 0,
+        winrate: wl.win && wl.lose ? (wl.win / (wl.win + wl.lose) * 100).toFixed(1) : 0
       },
-
       recentMatches: recentMatches || []
-    };
-
-    return res.status(200).json(fullData);
+    });
 
   } catch (err) {
-    console.error("🔥 steam-user API error:", err);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("steam-user error:", err);
+    res.status(500).json({ success: false, error: "Server error" });
   }
 };
