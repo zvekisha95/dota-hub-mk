@@ -1,20 +1,20 @@
 /****************************************************
- * THREAD.JS – 100% FIXED
+ * THREAD.JS – 100% БЕЗБЕДЕН + XSS FIX
  ****************************************************/
 
 let currentUser = null;
 
-/****************************************************
- * GET THREAD ID
- ****************************************************/
 function getThreadId() {
     const params = new URLSearchParams(window.location.search);
-    return params.get("id"); // ← ВАЖНО!!!
+    return params.get("id");
 }
 
-/****************************************************
- * AUTH HANDLER
- ****************************************************/
+function escapeHtml(t) {
+    const d = document.createElement("div");
+    d.textContent = t;
+    return d.innerHTML;
+}
+
 auth.onAuthStateChanged(async user => {
     if (!user) {
         location.href = "index.html";
@@ -24,7 +24,6 @@ auth.onAuthStateChanged(async user => {
     currentUser = user;
 
     const threadId = getThreadId();
-
     if (!threadId) {
         alert("Грешка: Нема ID.");
         location.href = "forum.html";
@@ -35,9 +34,6 @@ auth.onAuthStateChanged(async user => {
     loadComments(threadId);
 });
 
-/****************************************************
- * LOAD THREAD CONTENT
- ****************************************************/
 async function loadThread(id) {
     const doc = await db.collection("threads").doc(id).get();
 
@@ -47,14 +43,10 @@ async function loadThread(id) {
     }
 
     const t = doc.data();
-
     document.getElementById("threadTitle").textContent = t.title || "Без наслов";
-    document.getElementById("threadContent").innerHTML = t.content || "";
+    document.getElementById("threadContent").innerHTML = escapeHtml(t.content || "").replace(/\n/g, '<br>');
 }
 
-/****************************************************
- * LOAD COMMENTS
- ****************************************************/
 async function loadComments(id) {
     const box = document.getElementById("comments");
     box.innerHTML = "Вчитувам...";
@@ -79,16 +71,13 @@ async function loadComments(id) {
 
         box.innerHTML += `
             <div class="comment">
-                <b>${author}</b><br>
-                ${text}
+                <b>${escapeHtml(author)}</b><br>
+                ${escapeHtml(text).replace(/\n/g, '<br>')}
             </div>
         `;
     });
 }
 
-/****************************************************
- * POST COMMENT
- ****************************************************/
 async function postComment() {
     const text = document.getElementById("commentInput").value.trim();
     const threadId = getThreadId();
