@@ -1,86 +1,116 @@
-<!DOCTYPE html>
-<html lang="mk">
-<head>
-    <meta charset="UTF-8">
-    <title>Тема – Zvekisha Dota Hub</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+/****************************************************
+ * THREAD.JS – 100% FIXED
+ ****************************************************/
 
-    <style>
-        body {
-            margin: 0;
-            background: radial-gradient(circle at top, #1e293b 0, #020617 55%, #000 100%);
-            color: #e5e7eb;
-            font-family: system-ui, sans-serif;
-        }
-        .container {
-            max-width: 900px;
-            margin: 40px auto;
-            background: rgba(15,23,42,0.95);
-            padding: 25px 32px;
-            border-radius: 16px;
-            border: 1px solid rgba(55,65,81,0.6);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
-        }
-        h1 {
-            margin-top: 0;
-            margin-bottom: 16px;
-            font-size: 1.8rem;
-            color: #93c5fd;
-        }
-        #comments { margin-top: 30px; }
-        .comment {
-            padding: 14px;
-            margin-bottom: 14px;
-            background: rgba(30,41,59,0.55);
-            border-radius: 10px;
-            border: 1px solid rgba(55,65,81,0.4);
-        }
-        textarea {
-            width: 100%;
-            height: 110px;
-            margin-top: 10px;
-            padding: 12px;
-            border-radius: 10px;
-            resize: none;
-            border: 1px solid rgba(55,65,81,0.6);
-            background: #0f172a;
-            color: #e5e7eb;
-        }
-        button {
-            margin-top: 10px;
-            background: #3b82f6;
-            color: #fff;
-            padding: 10px 18px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        button:hover { background: #2563eb; }
-    </style>
-</head>
+let currentUser = null;
 
-<body>
+/****************************************************
+ * GET THREAD ID
+ ****************************************************/
+function getThreadId() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("id"); // ← ВАЖНО!!!
+}
 
-<div class="container">
-    <h1 id="threadTitle">Вчитувам...</h1>
-    <div id="threadContent"></div>
+/****************************************************
+ * AUTH HANDLER
+ ****************************************************/
+auth.onAuthStateChanged(async user => {
+    if (!user) {
+        location.href = "index.html";
+        return;
+    }
 
-    <h3>Коментари</h3>
-    <div id="comments"></div>
+    currentUser = user;
 
-    <h3>Нов коментар</h3>
-    <textarea id="commentInput" placeholder="Напиши коментар..."></textarea>
-    <button onclick="postComment()">Објави</button>
-</div>
+    const threadId = getThreadId();
 
+    if (!threadId) {
+        alert("Грешка: Нема ID.");
+        location.href = "forum.html";
+        return;
+    }
 
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    loadThread(threadId);
+    loadComments(threadId);
+});
 
-<script src="js/firebase-config.js"></script>
-<script src="js/thread.js"></script>
+/****************************************************
+ * LOAD THREAD CONTENT
+ ****************************************************/
+async function loadThread(id) {
+    const doc = await db.collection("threads").doc(id).get();
 
-</body>
-</html>
+    if (!doc.exists) {
+        document.getElementById("threadTitle").textContent = "Темата не постои.";
+        return;
+    }
+
+    const t = doc.data();
+
+    document.getElementById("threadTitle").textContent = t.title || "Без наслов";
+    document.getElementById("threadContent").innerHTML = t.content || "";
+}
+
+/****************************************************
+ * LOAD COMMENTS
+ ****************************************************/
+async function loadComments(id) {
+    const box = document.getElementById("comments");
+    box.innerHTML = "Вчитувам...";
+
+    const snap = await db.collection("threads")
+        .doc(id)
+        .collection("comments")
+        .orderBy("createdAt", "asc")
+        .get();
+
+    if (snap.empty) {
+        box.innerHTML = "<i>Нема коментари.</i>";
+        return;
+    }
+
+    box.innerHTML = "";
+
+    snap.forEach(doc => {
+        const c = doc.data();
+        const text = c.text || "";
+        const author = c.author || "Корисник";
+
+        box.innerHTML += `
+            <div class="comment">
+                <b>${author}</b><br>
+                ${text}
+            </div>
+        `;
+    });
+}
+
+/****************************************************
+ * POST COMMENT
+ ****************************************************/
+async function postComment() {
+    const text = document.getElementById("commentInput").value.trim();
+    const threadId = getThreadId();
+
+    if (!text) {
+        alert("Внеси текст.");
+        return;
+    }
+
+    const userDoc = await db.collection("users").doc(currentUser.uid).get();
+    const userData = userDoc.exists ? userDoc.data() : {};
+
+    await db.collection("threads")
+        .doc(threadId)
+        .collection("comments")
+        .add({
+            text,
+            author: userData.username || currentUser.email || "Корисник",
+            authorId: currentUser.uid,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+    document.getElementById("commentInput").value = "";
+    loadComments(threadId);
+}
