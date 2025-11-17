@@ -1,192 +1,63 @@
+
 <!DOCTYPE html>
 <html lang="mk">
 <head>
-  <meta charset="UTF-8" />
-  <title>Macedonia Dota 2 Hub – Login</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
+  <meta charset="UTF-8">
+  <title>Zvekisha Dota Hub – Најава</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    * { box-sizing: border-box; }
     body {
-      background: url("https://wallpapercave.com/wp/wp2596601.jpg") center/cover no-repeat fixed;
-      margin: 0;
-      padding: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: white;
+      margin:0; padding:0; min-height:100vh;
+      background: url("https://wallpapercave.com/wp/wp2596601.jpg") center/cover fixed;
+      font-family: system-ui, sans-serif;
+      display:flex; align-items:center; justify-content:center;
+      color:white;
     }
     .overlay {
-      min-height: 100vh;
-      width: 100%;
-      background: radial-gradient(circle at top,
-                rgba(15,23,42,0.6) 0,
-                rgba(15,23,42,0.95) 55%,
-                #020617 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
+      background: rgba(0,0,0,0.75);
+      padding:50px 30px;
+      border-radius:24px;
+      text-align:center;
+      max-width:460px;
+      box-shadow:0 30px 80px rgba(0,0,0,0.9);
+      border:2px solid rgba(59, 130, 246, 0.3);
     }
-    .container {
-      width: 420px;
-      max-width: 100%;
-      background: rgba(15, 23, 42, 0.9);
-      padding: 22px 24px 26px;
-      border-radius: 18px;
-      box-shadow: 0 22px 55px rgba(0,0,0,0.85);
-      border: 1px solid rgba(30, 64, 175, 0.6);
+    h1 {
+      font-size:2.8rem; margin:0 0 12px;
+      background: linear-gradient(135deg, #60a5fa, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-    h1 { text-align:center; margin:0 0 6px; font-size:1.7rem; }
-    .subtitle { text-align:center; margin:0 0 16px; color:#9ca3af; font-size:0.9rem; }
-
-    label { display:block; font-size:0.83rem; margin-bottom:4px; color:#e5e7eb; }
-    input {
-      width:100%; padding:10px; margin:6px 0 10px;
-      border-radius:9px; border:1px solid #1f2937;
-      background:#020617; color:#e5e7eb; font-size:0.95rem;
+    p { font-size:1.15rem; margin:18px 0; opacity:0.92; }
+    .steam-btn {
+      margin-top:30px;
     }
-    input:focus {
-      border-color:#22c55e;
-      box-shadow:0 0 0 1px rgba(34,197,94,0.25);
-    }
-    button {
-      width:100%; padding:11px;
-      background:#e11d48; color:white;
-      border:none; border-radius:999px;
-      cursor:pointer; font-size:0.95rem;
-      margin-top:4px; font-weight:600;
-    }
-    button:hover { background:#fb7185; }
-
-    .btn-secondary {
-      background:transparent; border:1px solid #374151;
-      color:#e5e7eb; margin-top:8px; padding:11px;
-      border-radius:999px; font-size:0.9rem; cursor:pointer;
-    }
-    .btn-secondary:hover { background:rgba(15,23,42,0.8); }
-
-    #loginBox, #registerBox { display:none; }
-
-    #steamPreview {
-      display:none;
-      background:rgba(15,23,42,0.9);
-      border-radius:10px; border:1px solid rgba(55,65,81,0.9);
-      padding:8px 10px; margin-top:6px; font-size:0.85rem;
-    }
-    #steamPreview img {
-      width:48px; height:48px; border-radius:50%;
-      margin-top:6px; border:1px solid #1f2937;
-    }
-
-    .status { font-size:0.8rem; min-height:16px; margin-top:4px; color:#9ca3af; }
-    .status.error { color:#f97373; }
-    .status.success { color:#4ade80; }
-    .small-text { font-size:0.8rem; color:#9ca3af; margin-top:4px; }
-
-    .section-title { text-align:center; margin:10px 0 8px; font-weight:600; }
-
-    #resetModal {
-      position:fixed; inset:0; background:rgba(0,0,0,0.75);
-      display:none; align-items:center; justify-content:center; z-index:9999;
-    }
-    #resetModal .modal-box {
-      background:#0f172a; padding:20px;
-      border-radius:14px; width:340px;
-      border:1px solid #334155;
-      box-shadow:0 0 25px rgba(0,0,0,0.4);
+    .footer {
+      margin-top:40px; font-size:0.9rem; opacity:0.7;
     }
   </style>
 </head>
-
 <body>
-<div class="overlay">
-  <div class="container">
+  <div class="overlay">
+    <h1>Zvekisha Dota Hub</h1>
+    <p>Најголемата македонска Dota 2 заедница</p>
+    <p>Форум • MMR • Ранг • Статистики • Турнири</p>
 
-    <h1>Macedonia Dota 2 Hub</h1>
-    <p class="subtitle">За кодот обратете се кај Zvekisha</p>
-
-    <!-- CLUB GATE -->
-    <div id="clubGate">
-      <label for="clubCode">Код за влез во клубот</label>
-      <input type="password" id="clubCode" placeholder="Внеси таен код..." />
-      <button onclick="checkCode()">Продолжи</button>
-      <p class="small-text">Само тие што го знаат кодот можат да влезат.</p>
+    <div class="steam-btn">
+      <a href="https://steamcommunity.com/openid/login
+        ?openid.ns=http://specs.openid.net/auth/2.0
+        &openid.mode=checkid_setup
+        &openid.return_to=https://tvoj-sajt.vercel.app/api/steam-callback
+        &openid.realm=https://tvoj-sajt.vercel.app
+        &openid.identity=http://specs.openid.net/auth/2.0/identifier_select
+        &openid.claimed_id=http://specs.openid.net/auth/2.0/identifier_select">
+        <img src="https://steamcommunity-a.akamaihd.net/public/images/signinthroughsteam/sits_01.png" alt="Sign in with Steam" style="border:none; height:56px;">
+      </a>
     </div>
 
-    <!-- LOGIN -->
-    <div id="loginBox">
-      <div class="section-title">Најава</div>
-
-      <label for="loginEmail">Email</label>
-      <input id="loginEmail" type="email" placeholder="example@gmail.com" />
-
-      <label for="loginPass">Лозинка</label>
-      <input id="loginPass" type="password" placeholder="Лозинка" />
-
-      <button onclick="login()">ЛОГИРАЈ СЕ</button>
-
-      <button class="btn-secondary" onclick="openResetModal()">Заборавена лозинка?</button>
-
-      <button class="btn-secondary" onclick="showRegister()">Нема профил? Регистрирај се</button>
-
-      <!-- 🔥 STEAM FIXED -->
-      <button class="btn-secondary" onclick="location.href='https://dota-hub-mk.vercel.app/api/steam-login'">
-        Најава преку Steam
-      </button>
-
-      <div id="loginStatus" class="status"></div>
+    <div class="footer">
+      Само еден клик • Нема регистрација • Нема лозинка
     </div>
-
-    <!-- REGISTER -->
-    <div id="registerBox">
-      <div class="section-title">Регистрација</div>
-
-      <label for="regUsername">Корисничко име</label>
-      <input id="regUsername" type="text" placeholder="Пример: Zvekisha" />
-
-      <label for="regEmail">Email</label>
-      <input id="regEmail" type="email" placeholder="example@gmail.com" />
-
-      <label for="regPass">Лозинка</label>
-      <input id="regPass" type="password" placeholder="Лозинка" />
-
-      <label for="regConfirmPass">Потврди лозинка</label>
-      <input id="regConfirmPass" type="password" placeholder="Повтори лозинка" />
-
-      <label for="regSteamId">Steam32 ID (Dota ID)</label>
-      <input id="regSteamId" type="text" placeholder="Пример: 123456789" />
-
-      <button onclick="previewSteamId()">Провери Steam ID / повлечи податоци</button>
-
-      <div id="steamPreview"></div>
-
-      <button onclick="register()">Креирај профил</button>
-      <button class="btn-secondary" onclick="showLogin()">Веќе имаш профил? Најава</button>
-
-      <div id="regStatus" class="status"></div>
-    </div>
-
   </div>
-</div>
-
-<!-- RESET MODAL -->
-<div id="resetModal">
-  <div class="modal-box">
-    <h2>Ресетирање лозинка</h2>
-    <label for="resetEmail">Внеси email</label>
-    <input type="email" id="resetEmail" placeholder="example@gmail.com" />
-    <button onclick="sendResetEmail()">Испрати линк</button>
-    <button class="btn-secondary" onclick="closeResetModal()">Откажи</button>
-    <p id="resetStatus" class="status"></p>
-  </div>
-</div>
-
-<!-- FIREBASE -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-<script src="js/firebase-config.js"></script>
-<script src="js/index.js"></script>
-
 </body>
 </html>
