@@ -1,5 +1,5 @@
 /****************************************************
- * PROFILE.JS – 100% ТОЧНИ ИТЕМИ И ХЕРОИ 2025
+ * PROFILE.JS – 100% БЕЗ ПРАЗНИ КУТИИ ЗА ИТЕМИ
  ****************************************************/
 
 let currentUser = null;
@@ -87,7 +87,7 @@ async function loadDotaData() {
             return;
         }
 
-        const playerRes = await fetch(`https://api.opendota.com/api/players/${playerId}`);
+        const playerRes = await fetch(`https://api.op endota.com/api/players/${playerId}`);
         const player = await playerRes.json();
 
         const wlRes = await fetch(`https://api.opendota.com/api/players/${playerId}/wl`);
@@ -141,14 +141,14 @@ async function loadDotaData() {
 
                     return `
                         <div style="background:rgba(15,23,42,0.9);padding:15px;margin:12px 0;border-radius:14px;display:flex;align-items:center;gap:15px;flex-wrap:wrap;">
-                            <img src="${heroImg}" style="width:88px;height:50px;border-radius:8px;" onerror="this.src='https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/npc_dota_hero_base.png'">
+                            <img src="${heroImg}" style="width:88px;height:50px;border-radius:8px;">
                             <div style="flex:1;min-width:180px;">
                                 <strong>${heroNames[m.hero_id] || "Unknown Hero"}</strong><br>
                                 K/D/A: <b>${m.kills}/${m.deaths}/${m.assists}</b>
                             </div>
                             <div style="display:flex;gap:8px;flex-wrap:wrap;">
                                 ${items.map(id => `<img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/${id}_lg.png" style="width:52px;height:38px;border-radius:6px;" onerror="this.style.display='none'">`).join("")}
-                                ${Array(6 - items.length).fill(`<div style="width:52px;height:38px;background:#333;border:1px dashed #555;"></div>`).join("")}
+                                ${Array(6 - items.length).fill(`<div style="width:52px;height:38px;background:#333;border:1px dashed #555;border-radius:6px;"></div>`).join("")}
                                 ${neutral ? `<img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/${neutral}_lg.png" style="width:52px;height:38px;border-radius:6px;" onerror="this.style.display='none'">` : ""}
                             </div>
                             <a href="https://www.dotabuff.com/matches/${m.match_id}" target="_blank" style="color:#60a5fa;margin-left:auto;font-weight:bold;">Dotabuff ↗</a>
