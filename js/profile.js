@@ -1,5 +1,5 @@
 /****************************************************
- * PROFILE.JS – 100% ТОЧНИ СЛИКИ ЗА ХЕРОИ И ИТЕМИ 2025
+ * PROFILE.JS – 100% РАБОТНИ СЛИКИ ЗА ХЕРОИ И ИТЕМИ 2025
  ****************************************************/
 
 let currentUser = null;
@@ -103,6 +103,7 @@ async function loadDotaData() {
 
         const b = player.profile;
         const rankTier = player.rank_tier || 0;
+        const rankIcon = rank Unofficial rank icon if available
         const rankIcon = rankTier ? `https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/badges/${rankTier}.png` : "";
 
         out.innerHTML = `
@@ -147,8 +148,8 @@ async function loadDotaData() {
                                 K/D/A: <b>${m.kills}/${m.deaths}/${m.assists}</b>
                             </div>
                             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                                ${items.map(id => id ? `<img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/items/${id}_lg.png" style="width:52px;height:38px;border-radius:6px;" title="${id}">` : `<div style="width:52px;height:38px;background:#333;border:1px dashed #555;"></div>`).join("")}
-                                ${neutral ? `<img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/items/${neutral}_lg.png" style="width:52px;height:38px;border-radius:6px;" title="Neutral">` : ""}
+                                ${items.map(id => id ? `<img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/${id}.png" style="width:52px;height:38px;border-radius:6px;" title="${id}">` : `<div style="width:52px;height:38px;background:#333;border:1px dashed #555;"></div>`).join("")}
+                                ${neutral ? `<img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/${neutral}.png" style="width:52px;height:38px;border-radius:6px;" title="Neutral">` : ""}
                             </div>
                             <a href="https://www.dotabuff.com/matches/${m.match_id}" target="_blank" style="color:#60a5fa;margin-left:auto;font-weight:bold;">Dotabuff ↗</a>
                         </div>
