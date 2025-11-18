@@ -1,5 +1,5 @@
 /****************************************************
- * PROFILE.JS – 100% РАБОТИ СО ТВОЈОТ FIRESTORE 2025
+ * PROFILE.JS – ФИНАЛНА ВЕРЗИЈА 2025 (работи 100%)
  ****************************************************/
 
 let currentUser = null;
@@ -59,33 +59,40 @@ async function loadDotaData() {
 
     try {
         const userDoc = await db.collection("users").doc(viewingUserId).get();
-        const steamId = userDoc.data()?.steamId;
-
-        if (!steamId) {
-            out.innerHTML = "<p>Нема Steam ID во профилот.</p>";
+        if (!userDoc.exists) {
+            out.innerHTML = "<p>Корисникот не постои.</p>";
             return;
         }
 
-        const res = await fetch(`https://dota-hub-mk.vercel.app/api/steam-user?steamId=${steamId}`);
-        const data = await res.json();
+        const data = userDoc.data();
+        // Клучната промена – прво зема opendotaId, па ако нема зема steamId
+        const playerId = data.opendotaId || data.steamId;
 
-        if (!data.success) {
-            out.innerHTML = "<p>Грешка: " + (data.error || "Нема податоци") + "</p>";
+        if (!playerId) {
+            out.innerHTML = "<p>Нема поврзан Steam/Dota профил.</p>";
             return;
         }
 
-        const b = data.basic;
-        const r = data.ranks;
-        const s = data.stats;
-        const recent = data.recentMatches;
+        const res = await fetch(`https://dota-hub-mk.vercel.app/api/steam-user?steamId=${playerId}`);
+        const apiData = await res.json();
+
+        if (!apiData.success) {
+            out.innerHTML = `<p>Грешка: ${apiData.error || "Нема податоци од OpenDota"}</p>`;
+            return;
+        }
+
+        const b = apiData.basic;
+        const r = apiData.ranks;
+        const s = apiData.stats;
+        const recent = apiData.recentMatches || [];
 
         const rankTier = r.rankTier || 0;
         const rankIcon = rankTier ? `https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/badges/${rankTier}.png` : "";
 
         out.innerHTML = `
             <div style="text-align:center;margin:20px 0;">
-                <img src="${b.avatar}" style="width:120px;height:120px;border-radius:50%;border:4px solid #3b82f6;">
-                <h2 style="margin:10px 0;color:#60a5fa;">${escapeHtml(b.name)}</h2>
+                <img src="${b.avatar || data.avatarUrl}" style="width:120px;height:120px;border-radius:50%;border:4px solid #3b82f6;">
+                <h2 style="margin:10px 0;color:#60a5fa;">${escapeHtml(b.name || data.username)}</h2>
                 <a href="${b.profileUrl}" target="_blank" style="color:#9ca3af;">Steam профил ↗</a>
             </div>
 
@@ -104,12 +111,12 @@ async function loadDotaData() {
 
             <div style="background:rgba(30,41,59,0.8);padding:20px;border-radius:16px;margin:20px 0;text-align:center;">
                 <h3>Статистика</h3>
-                Победи: <b>${s.wins}</b> • Загуби: <b>${s.losses}</b> • Winrate: <b>${s.winrate}%</b>
+                Победи: <b>${s.wins || 0}</b> • Загуби: <b>${s.losses || 0}</b> • Winrate: <b>${s.winrate || 0}%</b>
             </div>
 
             <h3 style="margin-top:30px;">Последни 10 меча</h3>
             <div style="max-height:500px;overflow-y:auto;">
-                ${recent.map(m => `
+                ${recent.length === 0 ? "<p>Нема последни мечиви.</p>" : recent.map(m => `
                     <div style="background:rgba(15,23,42,0.8);padding:12px;margin:10px 0;border-radius:12px;display:flex;justify-content:space-between;align-items:center;">
                         <span>Hero ID: ${m.hero_id}</span>
                         <span>K/D/A: ${m.kills}/${m.deaths}/${m.assists}</span>
@@ -120,7 +127,7 @@ async function loadDotaData() {
         `;
 
     } catch (e) {
-        console.error(e);
+        console.error("Грешка при Dota податоци:", e);
         out.innerHTML = "<p>Грешка при вчитување на Dota податоци.</p>";
     }
 }
