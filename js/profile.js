@@ -1,5 +1,5 @@
 /****************************************************
- * PROFILE.JS – СО ТОЧНИ СЛИКИ ЗА ХЕРОИ И ИТЕМИ
+ * PROFILE.JS – 100% ТОЧНИ ИКОНИ ЗА ХЕРОИ И ИТЕМИ (2025)
  ****************************************************/
 
 let currentUser = null;
@@ -16,22 +16,8 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Херои имена (за брзина)
-const heroNames = {
-  1: "Anti-Mage", 2: "Axe", 3: "Bane", 4: "Bloodseeker", 5: "Crystal Maiden", 6: "Drow Ranger", 7: "Earthshaker", 8: "Juggernaut", 9: "Mirana", 10: "Morphling",
-  11: "Shadow Fiend", 12: "Phantom Lancer", 13: "Puck", 14: "Pudge", 15: "Razor", 16: "Sand King", 17: "Storm Spirit", 18: "Sven", 19: "Tiny", 20: "Vengeful Spirit",
-  21: "Windranger", 22: "Zeus", 23: "Kunkka", 25: "Lina", 26: "Lion", 27: "Shadow Shaman", 28: "Slardar", 29: "Tidehunter", 30: "Witch Doctor", 31: "Lich",
-  32: "Riki", 33: "Enigma", 34: "Tinker", 35: "Sniper", 36: "Necrophos", 37: "Warlock", 38: "Beastmaster", 39: "Queen of Pain", 40: "Venomancer", 41: "Faceless Void",
-  42: "Wraith King", 43: "Death Prophet", 44: "Phantom Assassin", 45: "Pugna", 46: "Templar Assassin", 47: "Viper", 48: "Luna", 49: "Dragon Knight", 50: "Dazzle",
-  51: "Clockwerk", 52: "Leshrac", 53: "Nature's Prophet", 54: "Lifestealer", 55: "Dark Seer", 56: "Clinkz", 57: "Omniknight", 58: "Enchantress", 59: "Huskar", 60: "Night Stalker",
-  61: "Broodmother", 62: "Bounty Hunter", 63: "Weaver", 64: "Jakiro", 65: "Batrider", 66: "Chen", 67: "Spectre", 68: "Ancient Apparition", 69: "Doom", 70: "Ursa",
-  71: "Spirit Breaker", 72: "Gyrocopter", 73: "Alchemist", 74: "Invoker", 75: "Silencer", 76: "Outworld Destroyer", 77: "Lycan", 78: "Brewmaster", 79: "Shadow Demon", 80: "Lone Druid",
-  81: "Chaos Knight", 82: "Meepo", 83: "Treant Protector", 84: "Ogre Magi", 85: "Undying", 86: "Rubick", 87: "Disruptor", 88: "Nyx Assassin", 89: "Naga Siren", 90: "Keeper of the Light",
-  91: "Wisp", 92: "Visage", 93: "Slark", 94: "Medusa", 95: "Troll Warlord", 96: "Centaur Warrunner", 97: "Magnus", 98: "Timbersaw", 99: "Bristleback", 100: "Tusk",
-  101: "Skywrath Mage", 102: "Abaddon", 103: "Elder Titan", 104: "Legion Commander", 105: "Techies", 106: "Ember Spirit", 107: "Earth Spirit", 108: "Underlord", 109: "Terrorblade", 110: "Phoenix",
-  111: "Oracle", 112: "Winter Wyvern", 113: "Arc Warden", 114: "Monkey King", 119: "Dark Willow", 120: "Pangolier", 121: "Grimstroke", 123: "Hoodwink", 126: "Void Spirit", 128: "Snapfire",
-  129: "Mars", 135: "Dawnbreaker", 136: "Marci", 137: "Primal Beast", 138: "Muerta", 139: "Ringmaster"
-};
+// Херои имиња (за брзина)
+const heroNames = {1:"Anti-Mage",2:"Axe",3:"Bane",4:"Bloodseeker",5:"Crystal Maiden",6:"Drow Ranger",7:"Earthshaker",8:"Juggernaut",9:"Mirana",10:"Morphling",11:"Shadow Fiend",12:"Phantom Lancer",13:"Puck",14:"Pudge",15:"Razor",16:"Sand King",17:"Storm Spirit",18:"Sven",19:"Tiny",20:"Vengeful Spirit",21:"Windranger",22:"Zeus",23:"Kunkka",25:"Lina",26:"Lion",27:"Shadow Shaman",28:"Slardar",29:"Tidehunter",30:"Witch Doctor",31:"Lich",32:"Riki",33:"Enigma",34:"Tinker",35:"Sniper",36:"Necrophos",37:"Warlock",38:"Beastmaster",39:"Queen of Pain",40:"Venomancer",41:"Faceless Void",42:"Wraith King",43:"Death Prophet",44:"Phantom Assassin",45:"Pugna",46:"Templar Assassin",47:"Viper",48:"Luna",49:"Dragon Knight",50:"Dazzle",51:"Clockwerk",52:"Leshrac",53:"Nature's Prophet",54:"Lifestealer",55:"Dark Seer",56:"Clinkz",57:"Omniknight",58:"Enchantress",59:"Huskar",60:"Night Stalker",61:"Broodmother",62:"Bounty Hunter",63:"Weaver",64:"Jakiro",65:"Batrider",66:"Chen",67:"Spectre",68:"Ancient Apparition",69:"Doom",70:"Ursa",71:"Spirit Breaker",72:"Gyrocopter",73:"Alchemist",74:"Invoker",75:"Silencer",76:"Outworld Destroyer",77:"Lycan",78:"Brewmaster",79:"Shadow Demon",80:"Lone Druid",81:"Chaos Knight",82:"Meepo",83:"Treant Protector",84:"Ogre Magi",85:"Undying",86:"Rubick",87:"Disruptor",88:"Nyx Assassin",89:"Naga Siren",90:"Keeper of the Light",91:"Io",92:"Visage",93:"Slark",94:"Medusa",95:"Troll Warlord",96:"Centaur Warrunner",97:"Magnus",98:"Timbersaw",99:"Bristleback",100:"Tusk",101:"Skywrath Mage",102:"Abaddon",103:"Elder Titan",104:"Legion Commander",105:"Techies",106:"Ember Spirit",107:"Earth Spirit",108:"Underlord",109:"Terrorblade",110:"Phoenix",111:"Oracle",112:"Winter Wyvern",113:"Arc Warden",114:"Monkey King",119:"Dark Willow",120:"Pangolier",121:"Grimstroke",123:"Hoodwink",126:"Void Spirit",128:"Snapfire",129:"Mars",135:"Dawnbreaker",136:"Marci",137:"Primal Beast",138:"Muerta",139:"Ringmaster"};
 
 auth.onAuthStateChanged(async user => {
     if (!user) {
@@ -134,21 +120,21 @@ async function loadDotaData() {
             <div style="max-height:600px;overflow-y:auto;">
                 ${recentMatches.length === 0 ? "<p>Нема мечиви.</p>" : recentMatches.map(m => {
                     const heroName = heroNames[m.hero_id] || "Unknown Hero";
-                    const heroImg = `https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/${m.hero_id}.png`;
+                    const heroImg = `https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/${m.hero_id}.png?3`;
 
                     const items = [m.item_0, m.item_1, m.item_2, m.item_3, m.item_4, m.item_5];
                     const neutral = m.item_neutral || 0;
 
                     return `
                         <div style="background:rgba(15,23,42,0.9);padding:15px;margin:12px 0;border-radius:14px;display:flex;align-items:center;gap:15px;flex-wrap:wrap;">
-                            <img src="${heroImg}" style="width:80px;height:45px;border-radius:8px;">
+                            <img src="${heroImg}" style="width:88px;height:50px;border-radius:8px;">
                             <div style="flex:1;min-width:180px;">
                                 <strong>${heroName}</strong><br>
                                 K/D/A: <b>${m.kills}/${m.deaths}/${m.assists}</b>
                             </div>
-                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                                ${items.map(id => id ? `<img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/${id}.png" style="width:48px;height:35px;border-radius:4px;" title="${id}">` : `<div style="width:48px;height:35px;background:#333;border:1px dashed #555;"></div>`).join("")}
-                                ${neutral ? `<img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/${neutral}.png" style="width:48px;height:35px;border-radius:4px;" title="Neutral">` : ""}
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                ${items.map(id => id ? `<img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/${id}.png" style="width:52px;height:38px;border-radius:6px;" title="${id}">` : `<div style="width:52px;height:38px;background:#333;border:1px dashed #555;"></div>`).join("")}
+                                ${neutral ? `<img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/${neutral}.png" style="width:52px;height:38px;border-radius:6px;" title="Neutral">` : ""}
                             </div>
                             <a href="https://www.dotabuff.com/matches/${m.match_id}" target="_blank" style="color:#60a5fa;margin-left:auto;font-weight:bold;">Dotabuff ↗</a>
                         </div>
