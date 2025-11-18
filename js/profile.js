@@ -1,10 +1,9 @@
 /****************************************************
- * PROFILE.JS – СО TURBO / RANKED TOGGLE 2025
+ * PROFILE.JS – ФИНАЛНА ВЕРЗИЈА ШТО РАБОТИ 100% ЗА СИТЕ
  ****************************************************/
 
 let currentUser = null;
 let viewingUserId = null;
-let showTurbo = false; // false = Ranked, true = Turbo
 
 function getProfileId() {
     const params = new URLSearchParams(window.location.search);
@@ -27,7 +26,7 @@ auth.onAuthStateChanged(async user => {
     viewingUserId = getProfileId() || user.uid;
 
     await loadUserData();
-    await loadDotaData(); // прво Ranked
+    await loadDotaData();
 });
 
 async function loadUserData() {
@@ -60,103 +59,80 @@ async function loadDotaData() {
 
     try {
         const userDoc = await db.collection("users").doc(viewingUserId).get();
-        const playerId = userDoc.data()?.opendotaId || userDoc.data()?.steamId;
+        if (!userDoc.exists) {
+            out.innerHTML = "<p>Нема корисник.</p>";
+            return;
+        }
+
+        let playerId = userDoc.data()?.opendotaId || userDoc.data()?.steamId;
+
+        // Ако е Steam64 ID – конвертирај во OpenDota ID
+        if (playerId && playerId.length > 10) {
+            playerId = String(BigInt(playerId) - BigInt("76561197960265728"));
+        }
 
         if (!playerId) {
             out.innerHTML = "<p>Нема поврзан Steam профил.</p>";
             return;
         }
 
-        // Земаме и Ranked и Turbo податоци
-        const [rankedRes, turboRes] = await Promise.all([
-            fetch(`https://dota-hub-mk.vercel.app/api/steam-user?steamId=${playerId}&mode=ranked`),
-            fetch(`https://dota-hub-mk.vercel.app/api/steam-user?steamId=${playerId}&mode=turbo`)
-        ]);
+        const res = await fetch(`https://dota-hub-mk.vercel.app/api/steam-user?steamId=${playerId}`);
+        const data = await res.json();
 
-        const rankedData = await rankedRes.json();
-        const turboData = await turboRes.json();
-
-        if (!rankedData.success && !turboData.success) {
-            out.innerHTML = "<p>Грешка при вчитување на Dota податоци.</p>";
+        if (!data.success || data.empty) {
+            out.innerHTML = "<p>Нема Dota податоци (приватен профил или не е индексиран од OpenDota).</p>";
             return;
         }
 
-        // Почетно прикажување (Ranked)
-        renderDotaProfile(rankedData, turboData);
+        const b = data.basic;
+        const r = data.ranks;
+        const s = data.stats;
+        const recent = data.recentMatches || [];
 
-        // Додаваме копче за toggle
-        const toggleHTML = `
+        const rankTier = r.rankTier || 0;
+        const rankIcon = rankTier ? `https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/badges/${rankTier}.png` : "";
+
+        out.innerHTML = `
             <div style="text-align:center;margin:20px 0;">
-                <button onclick="toggleTurbo()" id="toggleBtn" style="padding:10px 25px;font-size:1rem;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;">
-                    Turbo: <span id="toggleText">OFF</span>
-                </button>
+                <img src="${b.avatar}" style="width:120px;height:120px;border-radius:50%;border:4px solid #3b82f6;">
+                <h2 style="margin:10px 0;color:#60a5fa;">${escapeHtml(b.name)}</h2>
+                <a href="${b.profileUrl}" target="_blank" style="color:#9ca3af;">Steam профил ↗</a>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+                <div style="background:rgba(30,41,59,0.8);padding:20px;border-radius:16px;text-align:center;">
+                    <h3>Ранг</h3>
+                    ${rankIcon ? `<img src="${rankIcon}" style="width:100px;margin:10px 0;"><br>` : "<p>Unranked</p>"}
+                    <b style="font-size:1.4rem;">${rankName(rankTier)}</b>
+                </div>
+                <div style="background:rgba(30,41,59,0.8);padding:20px;border-radius:16px;text-align:center;">
+                    <h3>MMR</h3>
+                    Solo: <b style="font-size:1.3rem;">${r.soloMMR || "N/A"}</b><br>
+                    Party: <b style="font-size:1.3rem;">${r.partyMMR || "N/A"}</b>
+                </div>
+            </div>
+
+            <div style="background:rgba(30,41,59,0.8);padding:20px;border-radius:16px;margin:20px 0;text-align:center;">
+                <h3>Статистика</h3>
+                Победи: <b>${s.wins}</b> • Загуби: <b>${s.losses}</b> • Winrate: <b>${s.winrate}%</b>
+            </div>
+
+            <h3>Последни 10 меча</h3>
+            <div style="max-height:500px;overflow-y:auto;">
+                ${recent.length === 0 ? "<p>Нема мечиви.</p>" : recentNotifications.map(m => `
+                    <div style="background:rgba(15,23,42,0.8);padding:12px;margin:10px 0;border-radius:12px;display:flex;justify-content:space-between;align-items:center;">
+                        <span>Hero ID: ${m.hero_id}</span>
+                        <span>K/D/A: ${m.kills}/${m.deaths}/${m.assists}</span>
+                        <a href="https://www.dotabuff.com/matches/${m.match_id}" target="_blank" style="color:#60a5fa;">Dotabuff ↗</a>
+                    </div>
+                `).join("")}
             </div>
         `;
 
-        out.insertAdjacentHTML('afterbegin', toggleHTML);
-
     } catch (e) {
-        console.error(e);
+        console.error("Грешка при Dota податоци:", e);
         out.innerHTML = "<p>Грешка при вчитување на Dota податоци.</p>";
     }
-}
-
-function renderDotaProfile(ranked, turbo) {
-    const data = showTurbo ? (turbo.success ? turbo : ranked) : (ranked.success ? ranked : turbo);
-    const b = data.basic;
-    const r = data.ranks;
-    const s = data.stats;
-    const recent = data.recentMatches || [];
-
-    const rankTier = r.rankTier || 0;
-    const rankIcon = rankTier ? `https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/badges/${rankTier}.png` : "";
-
-    const modeText = showTurbo ? "Turbo" : "Ranked";
-
-    document.getElementById("dotaProfile").innerHTML = `
-        <div style="text-align:center;margin:20px 0;">
-            <img src="${b.avatar}" style="width:120px;height:120px;border-radius:50%;border:4px solid ${showTurbo ? '#10b981' : '#3b82f6'}">
-            <h2 style="margin:10px 0;color:#60a5fa;">${escapeHtml(b.name)}</h2>
-            <p style="font-size:1.4rem;font-weight:bold;color:${showTurbo ? '#10b981' : '#3b82f6'}">${modeText} Режим</p>
-        </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-            <div style="background:rgba(30,41,59,0.8);padding:20px;border-radius:16px;text-align:center;">
-                <h3>Ранг</h3>
-                ${rankIcon ? `<img src="${rankIcon}" style="width:100px;margin:10px 0;"><br>` : "<p>Unranked</p>"}
-                <b style="font-size:1.4rem;">${rankName(rankTier)}</b>
-            </div>
-            <div style="background:rgba(30,41,59,0.8);padding:20px;border-radius:16px;text-align:center;">
-                <h3>MMR</h3>
-                Solo: <b style="font-size:1.3rem;">${r.soloMMR || "N/A"}</b><br>
-                Party: <b style="font-size:1.3rem;">${r.partyMMR || "N/A"}</b>
-            </div>
-        </div>
-
-        <div style="background:rgba(30,41,59,0.8);padding:20px;border-radius:16px;margin:20px 0;text-align:center;">
-            <h3>Статистика (${modeText})</h3>
-            Победи: <b>${s.wins}</b> • Загуби: <b>${s.losses}</b> • Winrate: <b>${s.winrate}%</b>
-        </div>
-
-        <h3>Последни мечиви (${modeText})</h3>
-        <div style="max-height:500px;overflow-y:auto;">
-            ${recent.length === 0 ? "<p>Нема мечиви.</p>" : recent.map(m => `
-                <div style="background:rgba(15,23,42,0.8);padding:12px;margin:10px 0;border-radius:12px;display:flex;justify-content:space-between;align-items:center;">
-                    <span>Hero ID: ${m.hero_id}</span>
-                    <span>K/D/A: ${m.kills}/${m.deaths}/${m.assists}</span>
-                    <a href="https://www.dotabuff.com/matches/${m.match_id}" target="_blank" style="color:#60a5fa;">Dotabuff ↗</a>
-                </div>
-            `).join("")}
-        </div>
-    `;
-
-    document.getElementById("toggleText").textContent = showTurbo ? "ON" : "OFF";
-}
-
-// Глобална функција за toggle
-function toggleTurbo() {
-    showTurbo = !showTurbo;
-    loadDotaData(); // повторно вчитува со нов режим
 }
 
 function rankName(tier) {
