@@ -3,28 +3,39 @@ const fetch = require("node-fetch");
 
 module.exports = async (req, res) => {
   try {
-    const { steamId } = req.query;
-    if (!steamId) return res.status(400).json({ success: false, error: "No steamId" });
+    const { steamId, mode } = req.query; // mode = "turbo" или празно
 
-    // 1. Основни податоци + MMR + ранг
+    if (!steamId || isNaN(steamId)) {
+      return res.status(400).json({ success: false, error: "Invalid steamId" });
+    }
+
+    // Основни податоци (за сите режими)
     const playerRes = await fetch(`https://api.opendota.com/api/players/${steamId}`);
     const player = await playerRes.json();
 
-    // 2. Win/Loss
-    const wlRes = await fetch(`https://api.opendota.com/api/players/${steamId}/wl`);
+    if (player?.error || !player.profile) {
+      return res.status(404).json({ success: false, error: "Player not found on OpenDota" });
+    }
+
+    // Win/Loss – различно за Turbo и Ranked
+    const wlEndpoint = mode === "turbo" 
+      ? `https://api.opendota.com/api/players/${steamId}/wl?game_mode=23`  // Turbo = game_mode 23
+      : `https://api.opendota.com/api/players/${steamId}/wl`;               // Ranked (default)
+
+    const wlRes = await fetch(wlEndpoint);
     const wl = await wlRes.json();
 
-    // 3. Последни мечиви
-    const recentRes = await fetch(`https://api.opendota.com/api/players/${steamId}/recentMatches`);
-    const recentMatches = await recentRes.json();
+    // Последни мечиви – различно за Turbo и Ranked
+    const recentEndpoint = mode === "turbo"
+      ? `https://api.opendota.com/api/players/${steamId}/recentMatches?game_mode=23`
+      : `https://api.opendota.com/api/players/${steamId}/recentMatches`;
 
-    // Ако OpenDota не го најде играчот
-    if (player?.error || player?.profile === undefined) {
-      return res.status(404).json({ success: false, error: "Player not found" });
-    }
+    const recentRes = await fetch(recentEndpoint);
+    const recentMatches = await recentRes.json();
 
     res.json({
       success: true,
+      mode: mode === "turbo" ? "Turbo" : "Ranked",
       basic: {
         name: player.profile.personaname || "Unknown",
         avatar: player.profile.avatarfull || "",
@@ -38,9 +49,9 @@ module.exports = async (req, res) => {
       stats: {
         wins: wl.win || 0,
         losses: wl.lose || 0,
-        winrate: wl.win && wl.lose ? (wl.win / (wl.win + wl.lose) * 100).toFixed(1) : 0
+        winrate: wl.win && wl.lose ? ((wl.win / (wl.win + wl.lose)) * 100).toFixed(1) : 0
       },
-      recentMatches: recentMatches || []
+      recentMatches: recentMatches.slice(0, 10) || []
     });
 
   } catch (err) {
