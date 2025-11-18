@@ -4,15 +4,14 @@ const openid = require('openid');
 const fetch = require("node-fetch");
 
 module.exports = async (req, res) => {
-  // ОВА Е КЛУЧНО – relyingParty мора да се креира ВНАТРЕ во handler-от!
   const STEAM_RETURN_URL = process.env.STEAM_RETURN_URL || "https://dota-hub-mk.vercel.app/api/steam-callback";
   const SITE_URL = process.env.SITE_URL || "https://dota-hub-mk.vercel.app";
 
   const relyingParty = new openid.RelyingParty(
     STEAM_RETURN_URL,
     SITE_URL,
-    true,  // stateless
-    true,  // strict
+    true,
+    true,
     []
   );
 
@@ -24,6 +23,9 @@ module.exports = async (req, res) => {
 
     const steamId64 = result.claimedIdentifier.split('/').pop();
     const uid = `steam:${steamId64}`;
+
+    // АВТОМАТСКА ПРЕСМЕТКА НА OPENDOTA ID (32-битен)
+    const opendotaId = String(BigInt(steamId64) - BigInt("76561197960265728"));
 
     let steamName = `SteamUser-${steamId64.slice(-6)}`;
     let avatar = "";
@@ -49,12 +51,13 @@ module.exports = async (req, res) => {
 
       const db = admin.firestore();
       const userRef = db.collection("users").doc(uid);
-
       const snap = await userRef.get();
+
       if (!snap.exists) {
         await userRef.set({
           username: steamName,
-          steamId: steamId64,
+          steamId: steamId64,           // Steam64 (за UID)
+          opendotaId: opendotaId,       // ← НОВО! За Dota податоци
           avatarUrl: avatar,
           role: "member",
           banned: false,
@@ -66,6 +69,7 @@ module.exports = async (req, res) => {
         await userRef.set({
           username: steamName,
           avatarUrl: avatar,
+          opendotaId: opendotaId,       // ← и за постоечки корисници
           online: true,
           lastSeen: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
