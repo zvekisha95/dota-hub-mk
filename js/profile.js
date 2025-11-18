@@ -1,5 +1,5 @@
 /****************************************************
- * PROFILE.JS – 100% ТОЧНИ СЛИКИ ЗА ХЕРОИ И ИТЕМИ 2025
+ * PROFILE.JS – 100% ТОЧНИ СЛИКИ ЗА ХЕРОИ И ИТЕМИ (2025)
  ****************************************************/
 
 let currentUser = null;
@@ -16,7 +16,7 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Херои имиња + точни CDN имиња
+// Точни имиња за херои (OpenDota CDN 2025)
 const heroNames = {
   1:"antimage",2:"axe",3:"bane",4:"bloodseeker",5:"crystal_maiden",6:"drow_ranger",7:"earthshaker",8:"juggernaut",9:"mirana",10:"morphling",
   11:"nevermore",12:"phantom_lancer",13:"puck",14:"pudge",15:"razor",16:"sand_king",17:"storm_spirit",18:"sven",19:"tiny",20:"vengefulspirit",
