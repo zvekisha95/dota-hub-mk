@@ -1,39 +1,41 @@
-// api/steam-user.js – 100% РАБОТИ, НИКАД НЕ ПАЃА
+// api/steam-user.js – ПОДДРЖУВА RANKED И TURBO
 const fetch = require("node-fetch");
 
 module.exports = async (req, res) => {
   try {
-    let { steamId } = req.query;
+    let { steamId, mode } = req.query; // mode = "turbo" или празно
 
     if (!steamId) {
-      return res.json({ success: true, empty: true });
+      return res.status(400).json({ success: false, error: "Нема steamId" });
     }
 
-    // Ако е Steam64, конвертирај во 32-битен
+    // Ако е Steam64 ID, конвертирај во OpenDota 32-битен
     if (steamId.length > 10) {
       steamId = String(BigInt(steamId) - BigInt("76561197960265728"));
     }
 
+    // OpenDota endpoints
+    const base = `https://api.opendota.com/api/players/${steamId}`;
+    const wlEndpoint = mode === "turbo" 
+      ? `${base}/wl?game_mode=23`  // Turbo mode
+      : `${base}/wl`;              // Ranked (default)
+
+    const recentEndpoint = mode === "turbo"
+      ? `${base}/recentMatches?game_mode=23`
+      : `${base}/recentMatches`;
+
     const [playerRes, wlRes, recentRes] = await Promise.all([
-      fetch(`https://api.opendota.com/api/players/${steamId}`).catch(() => ({ json: async () => ({}) })),
-      fetch(`https://api.opendota.com/api/players/${steamId}/wl`).catch(() => ({ json: async () => ({ win: 0, lose: 0 }) })),
-      fetch(`https://api.opendota.com/api/players/${steamId}/recentMatches`).catch(() => ({ json: async () => ([]) }))
+      fetch(base),
+      fetch(wlEndpoint),
+      fetch(recentEndpoint)
     ]);
 
     const player = await playerRes.json();
     const wl = await wlRes.json();
     const recentMatches = await recentRes.json();
 
-    // Ако OpenDota не го има профилот – врати празни податоци
     if (!player.profile) {
-      return res.json({
-        success: true,
-        empty: true,
-        basic: { name: "Непознат играч", avatar: "", profileUrl: "" },
-        ranks: { rankTier: 0, soloMMR: null, partyMMR: null },
-        stats: { wins: 0, losses: 0, winrate: 0 },
-        recentMatches: []
-      });
+      return res.json({ success: true, empty: true });
     }
 
     res.json({
@@ -41,7 +43,7 @@ module.exports = async (req, res) => {
       empty: false,
       basic: {
         name: player.profile.personaname || "Непознат",
-        avatar: player.profile.avatarfull || "",
+        avatar: player.Profile.avatarfull || "",
         profileUrl: player.profile.profileurl || ""
       },
       ranks: {
@@ -59,13 +61,6 @@ module.exports = async (req, res) => {
 
   } catch (err) {
     console.error("steam-user error:", err);
-    res.json({
-      success: true,
-      empty: true,
-      basic: { name: "Грешка", avatar: "", profileUrl: "" },
-      ranks: { rankTier: 0, soloMMR: null, partyMMR: null },
-      stats: { wins: 0, losses: 0, winrate: 0 },
-      recentMatches: []
-    });
+    res.json({ success: true, empty: true });
   }
 };
