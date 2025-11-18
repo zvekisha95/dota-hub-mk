@@ -48,7 +48,6 @@ module.exports = async (req, res) => {
 
     try {
       const firebaseToken = await admin.auth().createCustomToken(uid);
-
       const db = admin.firestore();
       const userRef = db.collection("users").doc(uid);
       const snap = await userRef.get();
@@ -56,8 +55,8 @@ module.exports = async (req, res) => {
       if (!snap.exists) {
         await userRef.set({
           username: steamName,
-          steamId: steamId64,           // Steam64 (за UID)
-          opendotaId: opendotaId,       // ← НОВО! За Dota податоци
+          steamId: steamId64,          // за Firebase UID
+          opendotaId: opendotaId,      // ← за Dota податоци (OpenDota)
           avatarUrl: avatar,
           role: "member",
           banned: false,
@@ -69,7 +68,7 @@ module.exports = async (req, res) => {
         await userRef.set({
           username: steamName,
           avatarUrl: avatar,
-          opendotaId: opendotaId,       // ← и за постоечки корисници
+          opendotaId: opendotaId,      // ← и за постоечки корисници
           online: true,
           lastSeen: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
