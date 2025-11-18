@@ -1,5 +1,5 @@
 /****************************************************
- * PROFILE.JS – СО ИМЕ НА ХЕРОЈ, АВАТАР И ИТЕМИ
+ * PROFILE.JS – СО ТОЧНИ СЛИКИ ЗА ХЕРОИ И ИТЕМИ
  ****************************************************/
 
 let currentUser = null;
@@ -16,7 +16,7 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Локален херој мап (за брзина, без API)
+// Херои имена (за брзина)
 const heroNames = {
   1: "Anti-Mage", 2: "Axe", 3: "Bane", 4: "Bloodseeker", 5: "Crystal Maiden", 6: "Drow Ranger", 7: "Earthshaker", 8: "Juggernaut", 9: "Mirana", 10: "Morphling",
   11: "Shadow Fiend", 12: "Phantom Lancer", 13: "Puck", 14: "Pudge", 15: "Razor", 16: "Sand King", 17: "Storm Spirit", 18: "Sven", 19: "Tiny", 20: "Vengeful Spirit",
@@ -97,7 +97,7 @@ async function loadDotaData() {
         const recentMatches = await recentRes.json();
 
         if (!player.profile) {
-            out.innerHTML = "<p>Нема јавни Dota податоци (приватен профил).</p>";
+            out.innerHTML = "<p>Нема јавни Dota податоци (приватен профил или не е индексиран).</p>";
             return;
         }
 
@@ -141,16 +141,16 @@ async function loadDotaData() {
 
                     return `
                         <div style="background:rgba(15,23,42,0.9);padding:15px;margin:12px 0;border-radius:14px;display:flex;align-items:center;gap:15px;flex-wrap:wrap;">
-                            <img src="${heroImg}" style="width:60px;height:34px;border-radius:6px;">
-                            <div style="flex:1;min-width:200px;">
+                            <img src="${heroImg}" style="width:80px;height:45px;border-radius:8px;">
+                            <div style="flex:1;min-width:180px;">
                                 <strong>${heroName}</strong><br>
                                 K/D/A: <b>${m.kills}/${m.deaths}/${m.assists}</b>
                             </div>
                             <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                                ${items.map(id => id ? `<img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/${id}.png" style="width:44px;height:32px;border-radius:4px;" title="${id}">` : `<div style="width:44px;height:32px;background:#333;border:1px dashed #555;"></div>`).join("")}
-                                ${neutral ? `<img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/${neutral}.png" style="width:44px;height:32px;border-radius:4px;" title="Neutral ${neutral}">` : ""}
+                                ${items.map(id => id ? `<img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/${id}.png" style="width:48px;height:35px;border-radius:4px;" title="${id}">` : `<div style="width:48px;height:35px;background:#333;border:1px dashed #555;"></div>`).join("")}
+                                ${neutral ? `<img src="https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/${neutral}.png" style="width:48px;height:35px;border-radius:4px;" title="Neutral">` : ""}
                             </div>
-                            <a href="https://www.dotabuff.com/matches/${m.match_id}" target="_blank" style="color:#60a5fa;margin-left:auto;">Dotabuff ↗</a>
+                            <a href="https://www.dotabuff.com/matches/${m.match_id}" target="_blank" style="color:#60a5fa;margin-left:auto;font-weight:bold;">Dotabuff ↗</a>
                         </div>
                     `;
                 }).join("")}
