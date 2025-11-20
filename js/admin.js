@@ -1,22 +1,17 @@
-// admin.js
-// auth и db доаѓаат од firebase-config.js
+
+// js/admin.js – ФИНАЛНА ВЕРЗИЈА 20.11.2025
+// Само за admin (со Steam поддршка)
 
 let currentUser = null;
-let userRole = "member";
 
-// Елементи од DOM
 const userListEl = document.getElementById("userList");
 const maintEnabledEl = document.getElementById("maintEnabled");
 const maintMessageEl = document.getElementById("maintMessage");
 const maintStatusEl = document.getElementById("maintStatus");
 
-// 🔐 Проверка за admin (со Steam fix)
+// Проверка дали е админ
 auth.onAuthStateChanged(async user => {
-  // 👇 дозволи Steam корисници (uid почнува со steam:)
-  const isSteamUser =
-    user && typeof user.uid === "string" && user.uid.startsWith("steam:");
-
-  if (!user || (!isSteamUser && user.email && !user.emailVerified)) {
+  if (!user || !user.uid.startsWith("steam:")) {
     location.href = "index.html";
     return;
   }
@@ -25,25 +20,23 @@ auth.onAuthStateChanged(async user => {
 
   try {
     const doc = await db.collection("users").doc(user.uid).get();
-    const data = doc.exists ? doc.data() : {};
-    userRole = data.role || "member";
-
-    if (userRole !== "admin") {
-      alert("Само админ има пристап до оваа страница.");
+    if (!doc.exists || doc.data().role !== "admin") {
+      alert("Само админ има пристап до оваа страница!");
       location.href = "main.html";
       return;
     }
 
     loadUsers();
     loadMaintenanceConfig();
+
   } catch (err) {
     console.error("Грешка при проверка на админ:", err);
-    alert("Грешка при читање на кориснички податоци.");
+    alert("Грешка при вчитување на податоци.");
     location.href = "main.html";
   }
 });
 
-// 🧾 Вчитување корисници
+// Вчитување на сите корисници
 async function loadUsers() {
   userListEl.innerHTML = `<div class="loading">Вчитувам корисници...</div>`;
 
@@ -53,7 +46,7 @@ async function loadUsers() {
       .get();
 
     if (snap.empty) {
-      userListEl.innerHTML = `<p class="empty">Нема корисници во базата.</p>`;
+      userListEl.innerHTML = `<p class="empty">Нема регистрирани корисници.</p>`;
       return;
     }
 
@@ -62,41 +55,39 @@ async function loadUsers() {
     snap.forEach(doc => {
       const u = doc.data();
       const id = doc.id;
-
-      const username = escapeHtml(u.username || "???");
-      const email = escapeHtml(u.email || "");
-      const role = u.role || "member";
-      const banned = u.banned === true;
-
-      const created =
-        u.createdAt?.toDate?.().toLocaleString("mk-MK") || "??";
-
       const isSelf = id === currentUser.uid;
 
+      const username = escapeHtml(u.username || "Непознат");
+      const role = u.role || "member";
+      const banned = u.banned === true;
+      const created = u.createdAt?.toDate?.().toLocaleString("mk-MK") || "Непознат";
+
+      const roleColor = role === "admin" ? "#ef4444" : role === "moderator" ? "#f59e0b" : "#22c55e";
+
       const html = `
-        <div class="user-row">
+        <div class="user-row" style="position:relative;padding-left:${isSelf ? "50px" : "16px"}">
+          ${isSelf ? `<div style="position:absolute;left:10px;top:16px;font-size:1.5rem;">👑</div>` : ""}
+
           <div class="user-main">
-            <div class="user-name">${username}</div>
-            <div class="user-email">${email}</div>
+            <div class="user-name">${username} ${isSelf ? "<small style='color:#60a5fa'>(ти)</small>" : ""}</div>
             <div class="user-meta">
-              Role: <span class="tag tag-role">${role}</span>
-              • Banned: <span class="tag ${banned ? "tag-banned" : "tag-ok"}">
-                ${banned ? "DA" : "NE"}
-              </span>
-              • Created: ${created}
+              Улога: <span class="tag" style="background:${roleColor};color:#000">${role}</span>
+              • Бан: <span class="tag ${banned ? "tag-banned" : "tag-ok"}">${banned ? "ДА" : "НЕ"}</span>
+              • Креиран: ${created}
             </div>
           </div>
 
           <div class="user-actions">
             <select onchange="changeRole('${id}', this.value)" ${isSelf ? "disabled" : ""}>
-              <option value="member" ${role === "member" ? "selected" : ""}>member</option>
-              <option value="moderator" ${role === "moderator" ? "selected" : ""}>moderator</option>
-              <option value="admin" ${role === "admin" ? "selected" : ""}>admin</option>
+              <option value="member" ${role === "member" ? "selected" : ""}>Член</option>
+              <option value="moderator" ${role === "moderator" ? "selected" : ""}>Модератор</option>
+              <option value="admin" ${role === "admin" ? "selected" : ""}>Админ</option>
             </select>
 
-            <button onclick="toggleBan('${id}', ${banned})"
-                    ${isSelf ? "disabled" : ""}>
-              ${banned ? "Unban" : "Ban"}
+            <button onclick="toggleBan('${id}', ${banned})" 
+                    ${isSelf ? "disabled title='Не можеш да се банираш самиот себе!'" : ""}
+                    style="background:${banned ? "#22c55e" : "#ef4444"}">
+              ${banned ? "Одбанирај" : "Банирај"}
             </button>
           </div>
         </div>
@@ -107,97 +98,87 @@ async function loadUsers() {
 
   } catch (err) {
     console.error("Грешка при вчитување корисници:", err);
-    userListEl.innerHTML = `<p class="error">Грешка при вчитување корисници.</p>`;
+    userListEl.innerHTML = `<p class="error">Грешка при вчитување.</p>`;
   }
 }
 
-// 🧑‍⚖️ Смени улога
+// Промена на улога
 async function changeRole(userId, newRole) {
-  if (!confirm(`Да ја сменам улогата на ${newRole}?`)) {
-    // reload за да се врати претходната вредност во select
+  const rolesMK = { member: "член", moderator: "модератор", admin: "админ" };
+
+  if (!confirm(`Да ја сменам улогата во "${rolesMK[newRole]}"?`)) {
     loadUsers();
     return;
   }
 
   try {
-    await db.collection("users").doc(userId).update({
-      role: newRole
-    });
+    await db.collection("users").doc(userId).update({ role: newRole });
+    alert("Улогата е променета!");
     loadUsers();
   } catch (err) {
-    console.error("Грешка при промена на улога:", err);
+    console.error(err);
     alert("Грешка при промена на улога.");
   }
 }
 
-// 🚫 Ban / Unban
+// Бан / одбан
 async function toggleBan(userId, currentlyBanned) {
-  const toState = !currentlyBanned;
-  if (!confirm(toState ? "Да го банирам овој корисник?" : "Да го тргнам банот?")) {
-    return;
-  }
+  const action = currentlyBanned ? "одбанирање" : "банирање";
+  if (!confirm(`Сигурен си за ${action}?`)) return;
 
   try {
-    await db.collection("users").doc(userId).update({
-      banned: toState
-    });
+    await db.collection("users").doc(userId).update({ banned: !currentlyBanned });
+    alert(currentlyBanned ? "Корисникот е одбаниран!" : "Корисникот е баниран!");
     loadUsers();
   } catch (err) {
-    console.error("Грешка при ban/unban:", err);
-    alert("Грешка при промена на banned статус.");
+    console.error(err);
+    alert("Грешка при бан.");
   }
 }
 
-// ⚙️ Вчитување maintenance конфигурација
+// Maintenance config
 async function loadMaintenanceConfig() {
-  maintStatusEl.textContent = "Вчитувам...";
-
   try {
     const doc = await db.collection("config").doc("maintenance").get();
-    if (!doc.exists) {
+    if (doc.exists) {
+      const d = doc.data();
+      maintEnabledEl.checked = !!d.enabled;
+      maintMessageEl.value = d.message || "";
+      maintStatusEl.textContent = "Конфигурацијата е вчитана.";
+    } else {
       maintEnabledEl.checked = false;
       maintMessageEl.value = "";
-      maintStatusEl.textContent = "Нема конфигурација – default исклучен.";
-      return;
+      maintStatusEl.textContent = "Maintenance е исклучен.";
     }
-
-    const data = doc.data();
-    maintEnabledEl.checked = !!data.enabled;
-    maintMessageEl.value = data.message || "";
-    maintStatusEl.textContent = "Конфигурацијата е вчитана.";
   } catch (err) {
-    console.error("Грешка при читање maintenance:", err);
-    maintStatusEl.textContent = "Грешка при читање.";
+    maintStatusEl.textContent = "Грешка при вчитување.";
   }
 }
 
-// 💾 Зачувај maintenance конфигурација
 async function saveMaintenanceConfig() {
   const enabled = maintEnabledEl.checked;
-  const message = maintMessageEl.value.trim();
+  const message = maintMessageEl.value.trim() || "Сајтот е во одржување...";
 
   maintStatusEl.textContent = "Се зачувува...";
+
   try {
     await db.collection("config").doc("maintenance").set({
       enabled,
       message
     }, { merge: true });
 
-    maintStatusEl.textContent = "Успешно зачувано.";
+    maintStatusEl.textContent = "Зачувано!";
   } catch (err) {
-    console.error("Грешка при зачувување maintenance:", err);
     maintStatusEl.textContent = "Грешка при зачувување.";
   }
 }
 
-// 👀 Preview режим – само за админ
 function previewMaintenance() {
-  // Ќе го прочита main.js
   localStorage.setItem("maintenancePreview", "true");
   window.open("main.html", "_blank");
 }
 
-// Мал helper за HTML
+// Безбеден escape
 function escapeHtml(text) {
   const div = document.createElement("div");
   div.textContent = text;
