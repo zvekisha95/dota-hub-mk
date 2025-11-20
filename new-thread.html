@@ -1,120 +1,162 @@
 <!DOCTYPE html>
 <html lang="mk">
 <head>
-    <meta charset="UTF-8">
-    <title>Нова Тема – Zvekisha Dota Hub</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Нова Тема – Zvekisha Dota Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-    <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #020617;
+      --panel: rgba(15,23,42,0.96);
+      --border: rgba(59,130,246,0.4);
+      --text: #e5e7eb;
+      --accent: #3b82f6;
+      --green: #22c55e;
+    }
 
-    <style>
-        body {
-            margin: 0;
-            background: radial-gradient(circle at top, #020617 0, #000 100%);
-            font-family: 'Oxanium', sans-serif;
-            color: #e5e7eb;
-        }
+    * { margin:0; padding:0; box-sizing:border-box; }
 
-        .container {
-            max-width: 750px;
-            margin: 40px auto;
-            padding: 25px;
-            background: rgba(15,23,42,0.95);
-            border-radius: 16px;
-            border: 1px solid rgba(148,163,184,0.3);
-            box-shadow: 0 0 25px rgba(37,99,235,0.45);
-        }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, #020617 0%, #000 100%);
+      font-family: 'Oxanium', sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+    }
 
-        h1 {
-            margin: 0 0 20px 0;
-            text-align: center;
-            color: #bfdbfe;
-            text-shadow: 0 0 14px rgba(96,165,250,0.85);
-        }
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 36px;
+      background: var(--panel);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 0 40px rgba(59,130,246,0.35);
+      backdrop-filter: blur(12px);
+    }
 
-        label {
-            display: block;
-            margin: 12px 0 6px 0;
-            font-size: 0.95rem;
-            color: #bfdbfe;
-        }
+    h1 {
+      text-align: center;
+      font-size: 2.6rem;
+      margin-bottom: 32px;
+      color: #bfdbfe;
+      text-shadow: 0 0 20px rgba(96,165,250,0.9);
+      letter-spacing: 1px;
+    }
 
-        input, textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: 10px;
-            border: 1px solid rgba(96,165,250,0.4);
-            background: rgba(30,41,59,0.7);
-            color: #e5e7eb;
-            font-size: 1rem;
-            font-family: 'Oxanium', sans-serif;
-            outline: none;
-            margin-bottom: 12px;
-        }
+    label {
+      display: block;
+      margin: 16px 0 8px;
+      font-weight: 600;
+      color: #93c5fd;
+      font-size: 1.05rem;
+    }
 
-        textarea {
-            height: 180px;
-        }
+    input, textarea {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1.5px solid rgba(96,165,250,0.5);
+      background: rgba(30,41,59,0.8);
+      color: var(--text);
+      font-family: 'Oxanium', sans-serif;
+      font-size: 1.05rem;
+      outline: none;
+      transition: all 0.3s;
+    }
 
-        button {
-            width: 100%;
-            padding: 12px;
-            margin-top: 8px;
-            border-radius: 12px;
-            border: 1px solid rgba(96,165,250,0.6);
-            background: linear-gradient(180deg, #3b82f6, #1e40af);
-            color: #e0f2fe;
-            font-weight: 700;
-            font-size: 1.1rem;
-            cursor: pointer;
-            box-shadow: 0 0 18px rgba(37,99,235,0.7);
-        }
+    input:focus, textarea:focus {
+      border-color: #60a5fa;
+      box-shadow: 0 0 20px rgba(96,165,250,0.4);
+      background: rgba(30,41,59,0.95);
+    }
 
-        button:hover {
-            transform: scale(1.02);
-            box-shadow: 0 0 28px rgba(59,130,246,0.9);
-        }
+    textarea {
+      min-height: 220px;
+      resize: vertical;
+    }
 
-        .status {
-            margin-top: 16px;
-            text-align: center;
-            font-size: 1rem;
-        }
+    button {
+      width: 100%;
+      padding: 16px;
+      margin-top: 20px;
+      border-radius: 14px;
+      border: none;
+      background: linear-gradient(135deg, var(--green), #16a34a);
+      color: white;
+      font-weight: 700;
+      font-size: 1.2rem;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(34,197,94,0.5);
+      transition: all 0.3s ease;
+    }
 
-        .error {
-            color: #f87171;
-        }
+    button:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 15px 35px rgba(34,197,94,0.7);
+    }
 
-        .loading {
-            color: #93c5fd;
-        }
-    </style>
+    button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .status {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 600;
+      padding: 12px;
+      border-radius: 10px;
+    }
+
+    .success { color: #22c55e; background: rgba(34,197,94,0.15); }
+    .error { color: #f87171; background: rgba(248,113,113,0.15); }
+    .loading { color: #60a5fa; background: rgba(96,165,250,0.15); }
+  </style>
 </head>
 
 <body>
 
-<div class="container">
+  <!-- ЕДИНСТВЕН ТОПБАР -->
+  <div id="topbar"></div>
+
+  <div class="container">
     <h1>Нова тема</h1>
 
-    <label>Наслов</label>
-    <input id="threadTitle" placeholder="Внеси наслов...">
+    <form id="newThreadForm">
+      <label for="threadTitle">Наслов на темата</label>
+      <input type="text" id="threadTitle" placeholder="Внеси интересен наслов..." maxlength="120" required>
 
-    <label>Содржина</label>
-    <textarea id="threadBody" placeholder="Внеси текст..."></textarea>
+      <label for="threadBody">Содржина</label>
+      <textarea id="threadBody" placeholder="Што сакаш да споделиш со заедницата? 😏" required></textarea>
 
-    <button onclick="postThread()">Објави тема</button>
+      <button type="submit" id="submitBtn">
+        Објави тема
+      </button>
+    </form>
 
     <div id="postStatus" class="status"></div>
-</div>
+  </div>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-<script src="js/firebase-config.js"></script>
-<script src="js/new-thread.js"></script>
+  <script src="js/firebase-config.js?v=1"></script>
+  <script src="js/new-thread.js?v=1"></script>
+
+  <!-- Топбар -->
+  <script src="js/topbar.js?v=1"></script>
+  <script>
+    setTimeout(() => {
+      if (typeof window.loadTopbar === "function") window.loadTopbar();
+    }, 1200);
+  </script>
 
 </body>
 </html>
-
