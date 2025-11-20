@@ -1,256 +1,186 @@
-// ─────────────────────────────
-// 🔥 INIT
-// ─────────────────────────────
+// js/admin.js – ФИНАЛНА ВЕРЗИЈА 20.11.2025
+// Само за admin (со Steam поддршка)
 
 let currentUser = null;
-let userRole = "member";
 
-// ─────────────────────────────
-// 🚪 LOGIN + ROLE CHECK (Steam FIXED)
-// ─────────────────────────────
+const userListEl = document.getElementById("userList");
+const maintEnabledEl = document.getElementById("maintEnabled");
+const maintMessageEl = document.getElementById("maintMessage");
+const maintStatusEl = document.getElementById("maintStatus");
+
+// Проверка дали е админ
 auth.onAuthStateChanged(async user => {
-    if (!user) {
-        location.href = "index.html";
-        return;
-    }
+  if (!user || !user.uid.startsWith("steam:")) {
+    location.href = "index.html";
+    return;
+  }
 
-    // Provider (Steam = custom token)
-    const provider = user.providerData[0]?.providerId || "custom";
+  currentUser = user;
 
-    // Email users ⇒ must verify
-    if (provider === "password" && !user.emailVerified) {
-        alert("Провери ја емаил адресата за да влезеш.");
-        location.href = "index.html";
-        return;
-    }
-
-    currentUser = user;
-
-    // Load Firestore user
+  try {
     const doc = await db.collection("users").doc(user.uid).get();
-    const data = doc.exists ? doc.data() : {};
-
-    userRole = data.role || "member";
-
-    // Allow only admin/mod
-    if (userRole !== "admin" && userRole !== "moderator") {
-        alert("Немаш дозвола да влезеш во мод панел.");
-        location.href = "main.html";
-        return;
+    if (!doc.exists || doc.data().role !== "admin") {
+      alert("Само админ има пристап до оваа страница!");
+      location.href = "main.html";
+      return;
     }
 
-    loadFlaggedComments();
-    loadThreads();
+    loadUsers();
+    loadMaintenanceConfig();
+
+  } catch (err) {
+    console.error("Грешка при проверка на админ:", err);
+    alert("Грешка при вчитување на податоци.");
+    location.href = "main.html";
+  }
 });
 
-// ─────────────────────────────
-// 🚩 LOAD FLAGGED COMMENTS (Improved)
-// ─────────────────────────────
-async function loadFlaggedComments() {
-    const out = document.getElementById("flaggedComments");
-    out.innerHTML = `<div class="loading">Вчитувам...</div>`;
+// Вчитување на сите корисници
+async function loadUsers() {
+  userListEl.innerHTML = `<div class="loading">Вчитувам корисници...</div>`;
 
-    try {
-        const threadsSnap = await db.collection("threads").get();
-        let results = [];
+  try {
+    const snap = await db.collection("users")
+      .orderBy("createdAt", "desc")
+      .get();
 
-        for (const t of threadsSnap.docs) {
-            const tData = t.data();
-
-            const comments = await t.ref
-                .collection("comments")
-                .where("flagged", "==", true)
-                .get();
-
-            comments.forEach(doc => {
-                const c = doc.data();
-
-                results.push({
-                    threadId: t.id,
-                    threadTitle: escapeHtml(tData.title || "Без наслов"),
-                    id: doc.id,
-                    text: escapeHtml(c.text || c.body || ""),
-                    author: escapeHtml(c.author || c.authorName || "???")
-                });
-            });
-        }
-
-        if (results.length === 0) {
-            out.innerHTML = `<p class="empty">Нема пријавени коментари.</p>`;
-            return;
-        }
-
-        out.innerHTML = "";
-
-        results.forEach(c => {
-            const html = `
-                <div class="flag-item">
-                    <div class="flag-info">
-                        <strong>${c.author}</strong>: ${c.text}
-                        <br>
-                        <a href="thread.html?id=${c.threadId}" class="small-link">
-                            → Отиди на тема
-                        </a>
-                    </div>
-
-                    <div class="flag-actions">
-                        <button onclick="unflagComment('${c.threadId}', '${c.id}')">Unflag</button>
-                        <button onclick="deleteComment('${c.threadId}', '${c.id}')">Delete</button>
-                    </div>
-                </div>
-            `;
-            out.insertAdjacentHTML("beforeend", html);
-        });
-
-    } catch (err) {
-        console.error(err);
-        out.innerHTML = `<p class="error">Грешка при вчитување.</p>`;
+    if (snap.empty) {
+      userListEl.innerHTML = `<p class="empty">Нема регистрирани корисници.</p>`;
+      return;
     }
+
+    userListEl.innerHTML = "";
+
+    snap.forEach(doc => {
+      const u = doc.data();
+      const id = doc.id;
+      const isSelf = id === currentUser.uid;
+
+      const username = escapeHtml(u.username || "Непознат");
+      const role = u.role || "member";
+      const banned = u.banned === true;
+      const created = u.createdAt?.toDate?.().toLocaleString("mk-MK") || "Непознат";
+
+      const roleColor = role === "admin" ? "#ef4444" : role === "moderator" ? "#f59e0b" : "#22c55e";
+
+      const html = `
+        <div class="user-row" style="position:relative;padding-left:${isSelf ? "50px" : "16px"}">
+          ${isSelf ? `<div style="position:absolute;left:10px;top:16px;font-size:1.5rem;">👑</div>` : ""}
+
+          <div class="user-main">
+            <div class="user-name">${username} ${isSelf ? "<small style='color:#60a5fa'>(ти)</small>" : ""}</div>
+            <div class="user-meta">
+              Улога: <span class="tag" style="background:${roleColor};color:#000">${role}</span>
+              • Бан: <span class="tag ${banned ? "tag-banned" : "tag-ok"}">${banned ? "ДА" : "НЕ"}</span>
+              • Креиран: ${created}
+            </div>
+          </div>
+
+          <div class="user-actions">
+            <select onchange="changeRole('${id}', this.value)" ${isSelf ? "disabled" : ""}>
+              <option value="member" ${role === "member" ? "selected" : ""}>Член</option>
+              <option value="moderator" ${role === "moderator" ? "selected" : ""}>Модератор</option>
+              <option value="admin" ${role === "admin" ? "selected" : ""}>Админ</option>
+            </select>
+
+            <button onclick="toggleBan('${id}', ${banned})" 
+                    ${isSelf ? "disabled title='Не можеш да се банираш самиот себе!'" : ""}
+                    style="background:${banned ? "#22c55e" : "#ef4444"}">
+              ${banned ? "Одбанирај" : "Банирај"}
+            </button>
+          </div>
+        </div>
+      `;
+
+      userListEl.insertAdjacentHTML("beforeend", html);
+    });
+
+  } catch (err) {
+    console.error("Грешка при вчитување корисници:", err);
+    userListEl.innerHTML = `<p class="error">Грешка при вчитување.</p>`;
+  }
 }
 
-// ─────────────────────────────
-// 🗂️ LOAD THREADS
-// ─────────────────────────────
-async function loadThreads() {
-    const out = document.getElementById("modThreads");
-    out.innerHTML = `<div class="loading">Вчитувам...</div>`;
+// Промена на улога
+async function changeRole(userId, newRole) {
+  const rolesMK = { member: "член", moderator: "модератор", admin: "админ" };
 
-    try {
-        const snap = await db.collection("threads")
-            .orderBy("createdAt", "desc")
-            .get();
+  if (!confirm(`Да ја сменам улогата во "${rolesMK[newRole]}"?`)) {
+    loadUsers();
+    return;
+  }
 
-        if (snap.empty) {
-            out.innerHTML = `<p class="empty">Нема теми.</p>`;
-            return;
-        }
+  try {
+    await db.collection("users").doc(userId).update({ role: newRole });
+    alert("Улогата е променета!");
+    loadUsers();
+  } catch (err) {
+    console.error(err);
+    alert("Грешка при промена на улога.");
+  }
+}
 
-        out.innerHTML = "";
+// Бан / одбан
+async function toggleBan(userId, currentlyBanned) {
+  const action = currentlyBanned ? "одбанирање" : "банирање";
+  if (!confirm(`Сигурен си за ${action}?`)) return;
 
-        snap.forEach(doc => {
-            const t = doc.data();
+  try {
+    await db.collection("users").doc(userId).update({ banned: !currentlyBanned });
+    alert(currentlyBanned ? "Корисникот е одбаниран!" : "Корисникот е баниран!");
+    loadUsers();
+  } catch (err) {
+    console.error(err);
+    alert("Грешка при бан.");
+  }
+}
 
-            const html = `
-                <div class="thread-item">
-                    <div>
-                        <strong>${escapeHtml(t.title || "Без наслов")}</strong>
-                        <br>
-                        <span class="author">${escapeHtml(t.author || t.authorName || "???")}</span>
-                        <br>
-                        <a href="thread.html?id=${doc.id}" class="small-link">→ Отвори</a>
-                    </div>
-
-                    <div class="thread-actions">
-                        <button onclick="toggleSticky('${doc.id}', ${t.sticky === true})">
-                            ${t.sticky ? "Unsticky" : "Sticky"}
-                        </button>
-
-                        <button onclick="toggleLock('${doc.id}', ${t.locked === true})">
-                            ${t.locked ? "Unlock" : "Lock"}
-                        </button>
-
-                        <button onclick="deleteThread('${doc.id}')" class="danger">
-                            Delete
-                        </button>
-                    </div>
-                </div>
-            `;
-            out.insertAdjacentHTML("beforeend", html);
-        });
-
-    } catch (err) {
-        console.error(err);
-        out.innerHTML = `<p class="error">Грешка.</p>`;
+// Maintenance config
+async function loadMaintenanceConfig() {
+  try {
+    const doc = await db.collection("config").doc("maintenance").get();
+    if (doc.exists) {
+      const d = doc.data();
+      maintEnabledEl.checked = !!d.enabled;
+      maintMessageEl.value = d.message || "";
+      maintStatusEl.textContent = "Конфигурацијата е вчитана.";
+    } else {
+      maintEnabledEl.checked = false;
+      maintMessageEl.value = "";
+      maintStatusEl.textContent = "Maintenance е исклучен.";
     }
+  } catch (err) {
+    maintStatusEl.textContent = "Грешка при вчитување.";
+  }
 }
 
-// ─────────────────────────────
-// 🔧 UNFLAG COMMENT
-// ─────────────────────────────
-async function unflagComment(threadId, commentId) {
-    try {
-        await db.collection("threads")
-            .doc(threadId)
-            .collection("comments")
-            .doc(commentId)
-            .update({
-                flagged: false,
-                flaggedBy: []
-            });
+async function saveMaintenanceConfig() {
+  const enabled = maintEnabledEl.checked;
+  const message = maintMessageEl.value.trim() || "Сајтот е во одржување...";
 
-        loadFlaggedComments();
-    } catch {
-        alert("Грешка.");
-    }
+  maintStatusEl.textContent = "Се зачувува...";
+
+  try {
+    await db.collection("config").doc("maintenance").set({
+      enabled,
+      message
+    }, { merge: true });
+
+    maintStatusEl.textContent = "Зачувано!";
+  } catch (err) {
+    maintStatusEl.textContent = "Грешка при зачувување.";
+  }
 }
 
-// ─────────────────────────────
-// ❌ DELETE COMMENT
-// ─────────────────────────────
-async function deleteComment(threadId, commentId) {
-    if (!confirm("Избриши го коментарот?")) return;
-
-    try {
-        await db.collection("threads")
-            .doc(threadId)
-            .collection("comments")
-            .doc(commentId)
-            .delete();
-
-        loadFlaggedComments();
-    } catch {
-        alert("Грешка при бришење.");
-    }
+function previewMaintenance() {
+  localStorage.setItem("maintenancePreview", "true");
+  window.open("main.html", "_blank");
 }
 
-// ─────────────────────────────
-// ❌ DELETE THREAD
-// ─────────────────────────────
-async function deleteThread(id) {
-    if (!confirm("Избриши цела тема?")) return;
-
-    try {
-        await db.collection("threads").doc(id).delete();
-        loadThreads();
-        alert("Темата е избришана.");
-    } catch {
-        alert("Грешка.");
-    }
+// Безбеден escape
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
 }
 
-// ─────────────────────────────
-// 📌 STICKY / UNSTICKY
-// ─────────────────────────────
-async function toggleSticky(id, current) {
-    try {
-        await db.collection("threads").doc(id).update({
-            sticky: !current
-        });
-        loadThreads();
-    } catch {
-        alert("Грешка.");
-    }
-}
-
-// ─────────────────────────────
-// 🔒 LOCK / UNLOCK THREAD
-// ─────────────────────────────
-async function toggleLock(id, current) {
-    try {
-        await db.collection("threads").doc(id).update({
-            locked: !current
-        });
-        loadThreads();
-    } catch {
-        alert("Грешка.");
-    }
-}
-
-// ─────────────────────────────
-// 🛡 Sanitize HTML
-// ─────────────────────────────
-function escapeHtml(t) {
-    const d = document.createElement("div");
-    d.textContent = t;
-    return d.innerHTML;
-}
