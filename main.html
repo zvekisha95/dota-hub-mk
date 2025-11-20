@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="mk">
 <head>
@@ -24,98 +25,6 @@
       min-height: 100vh;
     }
 
-    /* -------------------- TOP BAR -------------------- */
-
-    .topbar {
-      width: 100%;
-      padding: 10px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: radial-gradient(circle at top,
-        rgba(15,23,42,0.9) 0,
-        rgba(15,23,42,0.95) 45%,
-        #020617 100%
-      );
-      border-bottom: 1px solid rgba(30,64,175,0.8);
-      box-shadow: 0 6px 20px rgba(15,23,42,0.8);
-    }
-
-    .topbar-inner {
-      width: 100%;
-      max-width: 1050px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .logo-badge {
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
-      background: radial-gradient(circle at 30% 0%, #bfdbfe 0, #1d4ed8 45%, #020617 100%);
-      box-shadow: 0 0 16px rgba(59,130,246,0.9);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      font-size: 1.2rem;
-    }
-
-    .logo-text {
-      font-weight: 700;
-      font-size: 1.2rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #bfdbfe;
-      text-shadow: 0 0 18px rgba(96,165,250,0.85);
-    }
-
-    .top-links {
-      display: flex;
-      align-items: center;
-      gap: 18px;
-    }
-
-    .top-links a {
-      color: #e5e7eb;
-      text-decoration: none;
-      font-size: 0.9rem;
-      opacity: 0.85;
-      transition: 0.2s;
-      white-space: nowrap;
-    }
-
-    .top-links a:hover { opacity: 1; color: #bfdbfe; }
-
-    /* DONATE BUTTON */
-    .donate-btn {
-      background: linear-gradient(180deg, #3b82f6, #1e40af);
-      padding: 7px 14px;
-      border-radius: 10px;
-      color: #e0f2fe !important;
-      font-weight: 700;
-      font-size: 0.9rem;
-      border: 1px solid rgba(191,219,254,0.45);
-      text-decoration: none;
-      box-shadow: 0 0 18px rgba(59,130,246,0.85);
-      transition: 0.15s ease-in-out;
-    }
-
-    .donate-btn:hover {
-      transform: scale(1.07);
-      filter: brightness(1.15);
-      box-shadow: 0 0 26px rgba(96,165,250,0.95);
-    }
-
-    /* -------------------- PAGE CONTENT -------------------- */
-
     .wrapper {
       max-width: 1100px;
       margin: 0 auto;
@@ -124,141 +33,156 @@
 
     .hero {
       text-align: center;
-      padding: 60px 20px;
-      background: linear-gradient(135deg, rgba(34,197,94,0.15), transparent);
-      border-radius: 20px;
-      margin-bottom: 30px;
+      padding: 70px 20px;
+      background: linear-gradient(135deg, rgba(34,197,94,0.18), transparent);
+      border-radius: 24px;
+      margin-bottom: 36px;
       border: 1px solid var(--border);
-      position:relative;
+      position: relative;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
     }
 
-    .hero h1 { font-size: 2.8rem; margin-bottom: 12px; }
-    .hero p { font-size: 1.1rem; color: var(--muted); }
+    .hero h1 {
+      font-size: 3rem;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #bfdbfe, #60a5fa);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 1.15rem;
+      color: var(--muted);
+    }
 
     .stats {
       display: flex;
-      gap: 16px;
+      gap: 18px;
       flex-wrap: wrap;
-      margin-bottom: 20px;
+      justify-content: center;
+      margin-bottom: 30px;
     }
 
     .stat {
-      background: rgba(34,197,94,0.15);
-      padding: 8px 14px;
-      border-radius: 12px;
-      font-size: 0.9rem;
+      background: rgba(34,197,94,0.2);
+      padding: 10px 18px;
+      border-radius: 14px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      border: 1px solid rgba(34,197,94,0.3);
     }
 
     .grid {
       display: grid;
-      gap: 20px;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     }
 
     .card {
       background: var(--card);
-      padding: 20px;
-      border-radius: 16px;
+      padding: 24px;
+      border-radius: 18px;
       border: 1px solid var(--border);
-      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
-      transition: 0.2s;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      transition: all 0.3s ease;
     }
 
-    .card:hover { transform: translateY(-4px); }
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 40px rgba(34,197,94,0.25);
+      border-color: #22c55e;
+    }
+
+    .card h3 {
+      margin-bottom: 16px;
+      color: #60a5fa;
+      font-size: 1.4rem;
+    }
 
     .footer {
       text-align: center;
-      padding: 30px;
+      padding: 50px 20px;
       color: var(--muted);
-      font-size: 0.9rem;
-      margin-top: 40px;
+      font-size: 0.95rem;
+      margin-top: 60px;
+      border-top: 1px solid var(--border);
     }
 
     .avatar {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
+      background-size: cover;
+      background-position: center;
+      font-size: 1.3rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.2rem;
-      background-size: cover;
       color: #000;
+      font-weight: bold;
+      box-shadow: 0 0 15px rgba(96,165,250,0.6);
+    }
+
+    #liveMatches {
+      min-height: 60px;
+      font-size: 1.05rem;
+      line-height: 1.6;
     }
   </style>
 </head>
 
 <body>
 
-<!-- ================= TOP BAR ================= -->
-<div class="topbar">
-  <div class="topbar-inner">
+  <!-- ЕДИНСТВЕН ТОПБАР -->
+  <div id="topbar"></div>
 
-    <div class="logo">
-      <div class="logo-badge">Z</div>
-      <div class="logo-text">Zvekisha Dota Hub</div>
+  <div class="wrapper">
+
+    <div class="hero">
+      <h1>Добредојде, <span id="userName">...</span>!</h1>
+      <p>Надградба: 20.11.2025 – Zvekisha Dota Hub е жив!</p>
+
+      <div style="position:absolute; top:24px; right:24px;">
+        <div class="avatar" id="userAvatar">U</div>
+      </div>
     </div>
 
-    <div class="top-links">
-      <a href="main.html">Главна</a>
-      <a href="forum.html">Форум</a>
-      <a href="#" id="profileLink">Профил</a>
-      <a href="#" id="logoutLink">Одјави се</a>
-      <a href="https://www.paypal.com/paypalme/Zvekisha" target="_blank" class="donate-btn">🅿 Donate</a>
+    <div class="stats">
+      <div class="stat">Членови: <span id="memberCount">0</span></div>
+      <div class="stat">Теми: <span id="threadCount">0</span></div>
+      <div class="stat">Коментари: <span id="commentCount">0</span></div>
+      <div class="stat">Онлајн: <span id="onlineCount" style="color:#22c55e;font-weight:bold">0</span></div>
     </div>
 
-  </div>
-</div>
-
-<!-- ================= PAGE CONTENT ================= -->
-
-<div class="wrapper">
-
-  <div class="hero">
-    <h1>Добредојде, <span id="userName">...</span>!</h1>
-    <p>Надградба: 15.11.2025 06:34 PM CET</p>
-
-    <div style="position:absolute; top:20px; right:20px;">
-      <div class="avatar" id="userAvatar">U</div>
-    </div>
-  </div>
-
-  <div class="stats">
-    <div class="stat">Членови: <span id="memberCount">0</span></div>
-    <div class="stat">Теми: <span id="threadCount">0</span></div>
-    <div class="stat">Коментари: <span id="commentCount">0</span></div>
-    <div class="stat">Онлајн: <span id="onlineCount" class="online-users">0</span></div>
-  </div>
-
-  <div class="grid">
-
-    <div class="card">
-      <h3>Live мечеви</h3>
-      <div id="liveMatches">Никој не игра моментално.</div>
+    <div class="grid">
+      <div class="card">
+        <h3>Live мечеви</h3>
+        <div id="liveMatches">Проверувам активни мечеви...</div>
+      </div>
     </div>
 
   </div>
 
-</div>
+  <div class="footer">
+    Zvekisha Dota Hub © 2025 | Македонска Dota 2 заедница | Powered by Steam & Firebase
+  </div>
 
-<div class="footer">
-  Zvekisha Dota Hub © 2025 | Само за членови
-</div>
+  <!-- Firebase Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="js/firebase-config.js?v=1"></script>
+  <script src="js/main.js?v=1"></script>
 
-<script src="js/firebase-config.js?v=999999"></script>
-<script src="js/main.js?v=999999"></script>
-
-<script>
-document.getElementById("logoutLink").onclick = function(e){
-  e.preventDefault();
-  auth.signOut().then(() => location.href = "index.html");
-};
-</script>
+  <!-- Топбар вчитување -->
+  <script src="js/topbar.js?v=1"></script>
+  <script>
+    setTimeout(() => {
+      if (typeof window.loadTopbar === "function") window.loadTopbar();
+    }, 1200);
+  </script>
 
 </body>
 </html>
