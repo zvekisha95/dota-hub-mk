@@ -1,11 +1,11 @@
 // =======================================================
-// 1) Чекај Firebase да се вчита
+// 1) Чекај DOM + Firebase да се вчита
 // =======================================================
 document.addEventListener("DOMContentLoaded", async () => {
 
   console.log("main.js стартува...");
 
-  // Сигурност: чекај 200ms да се вчита firebase-config.js
+  // Чекај firebase-config да се вчита
   await new Promise(res => setTimeout(res, 200));
 
   if (!firebase || !firebase.auth) {
@@ -18,6 +18,47 @@ document.addEventListener("DOMContentLoaded", async () => {
   const db = firebase.firestore();
 
   // =======================================================
+  // AUTO INIT FORUM – креирање `stats` + `threads`
+  // =======================================================
+  async function initForum() {
+    try {
+      const statsRef = db.collection("stats").doc("community");
+      const statsSnap = await statsRef.get();
+
+      // Креирање статистики ако не постојат
+      if (!statsSnap.exists) {
+        await statsRef.set({
+          members: 1,
+          threads: 1,
+          comments: 0
+        });
+        console.log("✔ initForum: community stats created");
+      }
+
+      // Проверка дали threads колекцијата има барем една тема
+      const threadSnap = await db.collection("threads").limit(1).get();
+
+      if (threadSnap.empty) {
+        await db.collection("threads").add({
+          title: "Добредојдовте на форумот!",
+          body: "Форумот е успешно поставен. Креирај нова тема од менито! 😊",
+          author: "System",
+          authorId: "system",
+          sticky: false,
+          locked: false,
+          commentCount: 0,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        console.log("✔ initForum: first default thread created");
+      }
+
+    } catch (err) {
+      console.error("❌ initForum error:", err);
+    }
+  }
+
+  // =======================================================
   // 2) Читање steamToken од URL
   // =======================================================
   const urlParams = new URLSearchParams(window.location.search);
@@ -28,8 +69,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
       await auth.signInWithCustomToken(steamToken);
-
-      console.log("✔ Steam Firebase login резултат: Успешно!");
+      console.log("✔ Steam Firebase login успеа!");
 
       // Исчисти го token од URL
       window.history.replaceState({}, document.title, "main.html");
@@ -61,18 +101,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     console.log("✔ Корисник е најавен:", user.uid);
 
+    // 🔥 Стартувај AUTO INIT
+    await initForum();
+
+    // Податоци за корисник
     const userRef = db.collection("users").doc(user.uid);
     const snap = await userRef.get();
     const userData = snap.exists ? snap.data() : {};
 
-    // Бан чек
+    // Бан
     if (userData.banned === true) {
       alert("БАНИРАН СИ ОД САЈТОТ!");
       auth.signOut();
       return;
     }
 
-    // UI Ажурирање
+    // UI – име и аватар
     document.querySelectorAll("#userName").forEach(el => {
       el.textContent = userData.username || "Играч";
     });
@@ -84,30 +128,32 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     }
 
-    // Роли
+    // ADMIN / MOD копчиња
     const role = (userData.role || "member").toLowerCase();
     const topLinks = document.querySelector(".top-links");
 
     if (topLinks && (role === "admin" || role === "moderator")) {
       if (!topLinks.querySelector(".admin-btn")) {
+
         if (role === "admin") {
           topLinks.insertAdjacentHTML("beforeend",
             `<a href="admin.html" class="admin-btn">Админ Панел</a>`
           );
         }
+
         topLinks.insertAdjacentHTML("beforeend",
           `<a href="dashboard.html" class="mod-btn">Мод Панел</a>`
         );
       }
     }
 
-    // Онлајн статус
+    // Сетирај онлајн статус
     userRef.set({
       online: true,
       lastSeen: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
-    // Онлајн пинг
+    // Пинг на 30 секунди
     setInterval(() => {
       userRef.update({
         lastSeen: firebase.firestore.FieldValue.serverTimestamp()
@@ -123,9 +169,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 // =======================================================
-// 4) Функции за статистики
+// Статистики
 // =======================================================
 function loadStats(db) {
+
   db.collection("users")
     .where("online", "==", true)
     .onSnapshot(snap => {
@@ -134,6 +181,7 @@ function loadStats(db) {
     });
 
   const statsRef = db.collection("stats").doc("community");
+
   statsRef.onSnapshot(snap => {
     if (!snap.exists) return;
     const d = snap.data();
@@ -145,7 +193,7 @@ function loadStats(db) {
 }
 
 // =======================================================
-// 5) Live matches
+// Live matches
 // =======================================================
 async function loadLiveMatches(db) {
   const container = document.getElementById("liveMatches");
@@ -170,7 +218,7 @@ async function loadLiveMatches(db) {
       html += `
         <div style="margin:6px 0;padding:10px;background:rgba(34,197,94,0.15);
              border-radius:10px;font-weight:500;">
-        <strong>${u.username}</strong> е во Dota 2 меч!
+          <strong>${u.username}</strong> е во Dota 2 меч!
         </div>`;
     });
 
@@ -181,3 +229,4 @@ async function loadLiveMatches(db) {
     container.innerHTML = "Грешка при проверка.";
   }
 }
+
