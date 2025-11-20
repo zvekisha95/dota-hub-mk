@@ -1,3 +1,4 @@
+<!-- topbar.html – FIXED VERSION -->
 <div class="topbar">
   <div class="topbar-inner">
 
@@ -8,12 +9,16 @@
 
     <div class="top-links">
       <a href="main.html">Главна</a>
+      <a href="forum.html">Форум</a>
       <a href="#" id="profileLink">Профил</a>
-      <a href="#" onclick="logoutUser()">Одјави се</a>
+      <a href="#" id="logoutLink" onclick="auth.signOut(); location.href='index.html'">Одјави се</a>
+
+      <!-- Admin / Mod копчиња се додаваат автоматски преку topbar.js -->
 
       <a href="https://www.paypal.com/paypalme/Zvekisha"
          target="_blank"
-         class="donate-btn">🅿 Donate</a>
+         rel="noopener"
+         class="donate-btn">Donate</a>
     </div>
 
   </div>
@@ -22,22 +27,25 @@
 <style>
   .topbar {
     width: 100%;
-    padding: 10px 20px;
+    padding: 11px 20px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: radial-gradient(circle at top,
-      rgba(15,23,42,0.9) 0,
-      rgba(15,23,42,0.95) 45%,
+      rgba(15,23,42,0.92) 0%,
+      rgba(15,23,42,0.97) 45%,
       #020617 100%
     );
-    border-bottom: 1px solid rgba(30,64,175,0.8);
-    box-shadow: 0 6px 20px rgba(15,23,42,0.8);
+    border-bottom: 1px solid rgba(59,130,246,0.4);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.7);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
   }
 
   .topbar-inner {
     width: 100%;
-    max-width: 1050px;
+    max-width: 1080px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -46,65 +54,99 @@
   .logo {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 11px;
   }
 
   .logo-badge {
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
-    background: radial-gradient(circle at 30% 0%, #bfdbfe 0, #1d4ed8 45%, #020617 100%);
-    box-shadow: 0 0 16px rgba(59,130,246,0.9);
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    background: radial-gradient(circle at 30% 0%, #bfdbfe 0%, #1d4ed8 48%, #020617 100%);
+    box-shadow: 0 0 18px rgba(59,130,246,0.9);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 800;
-    font-size: 1.2rem;
+    font-weight: 900;
+    font-size: 1.3rem;
     color: #e5e7eb;
   }
 
   .logo-text {
     font-weight: 700;
-    font-size: 1.2rem;
-    letter-spacing: 0.08em;
+    font-size: 1.25rem;
+    letter-spacing: 0.09em;
     text-transform: uppercase;
     color: #bfdbfe;
-    text-shadow: 0 0 18px rgba(96,165,250,0.85);
+    text-shadow: 0 0 20px rgba(96,165,250,0.9);
   }
 
   .top-links {
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 20px;
+    flex-wrap: wrap;
   }
 
   .top-links a {
     color: #e5e7eb;
     text-decoration: none;
-    font-size: 0.9rem;
-    opacity: 0.85;
-    transition: 0.2s;
+    font-size: 0.94rem;
+    font-weight: 500;
+    opacity: 0.88;
+    transition: all 0.2s ease;
     white-space: nowrap;
   }
 
-  .top-links a:hover { opacity: 1; color: #bfdbfe; }
+  .top-links a:hover {
+    opacity: 1;
+    color: #bfdbfe;
+    text-shadow: 0 0 10px rgba(191,219,254,0.6);
+  }
 
   .donate-btn {
     background: linear-gradient(180deg, #3b82f6, #1e40af);
-    padding: 7px 14px;
+    padding: 8px 16px;
     border-radius: 10px;
     color: #e0f2fe !important;
     font-weight: 700;
-    font-size: 0.9rem;
-    border: 1px solid rgba(191,219,254,0.45);
-    text-decoration: none;
-    box-shadow: 0 0 18px rgba(59,130,246,0.85);
-    transition: 0.15s ease-in-out;
+    font-size: 0.92rem;
+    border: 1px solid rgba(191,219,254,0.5);
+    box-shadow: 0 0 20px rgba(59,130,246,0.9);
+    transition: all 0.2s ease;
   }
 
   .donate-btn:hover {
-    transform: scale(1.07);
-    filter: brightness(1.15);
-    box-shadow: 0 0 26px rgba(96,165,250,0.95);
+    transform: scale(1.08) translateY(-2px);
+    filter: brightness(1.2);
+    box-shadow: 0 0 30px rgba(96,165,250,1);
+  }
+
+  /* Admin / Mod копчиња */
+  .admin-btn, .mod-btn {
+    font-weight: 700 !important;
+    padding: 8px 16px !important;
+    border-radius: 10px !important;
+    border: 2px solid !important;
+    background: rgba(255,255,255,0.1) !important;
+    transition: all 0.3s !important;
+  }
+
+  .admin-btn {
+    color: #ff4444 !important;
+    border-color: #ff4444 !important;
+  }
+
+  .admin-btn:hover {
+    background: rgba(239,68,68,0.3) !important;
+  }
+
+  .mod-btn {
+    color: #ffaa00 !important;
+    border-color: #ffaa00 !important;
+  }
+
+  .mod-btn:hover {
+    background: rgba(255,170,0,0.3) !important;
   }
 </style>
+
