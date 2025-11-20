@@ -1,263 +1,201 @@
 <!DOCTYPE html>
 <html lang="mk">
 <head>
-    <meta charset="UTF-8" />
-    <title>Форум – Zvekisha Dota Hub</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <title>Форум – Zvekisha Dota Hub</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<style>
+  <style>
+    :root {
+      --bg-dark: #0b0e15;
+      --bg-panel: #13161f;
+      --bg-panel-hover: #1a1f2e;
+      --border: #222938;
+      --text-main: #e5e7eb;
+      --text-soft: #94a3b8;
+      --link: #60a5fa;
+      --accent: #3b82f6;
+      --green: #22c55e;
+      --locked: #ef4444;
+      --sticky-bg: rgba(34,197,94,0.15);
+    }
 
-:root {
-    --bg-dark: #0c0f16;
-    --bg-panel: #151923;
-    --bg-panel-hover: #1d2330;
-    --border: #1f2533;
-    --text-main: #e5e7eb;
-    --text-soft: #9ca3af;
-    --link: #67b7ff;
-    --accent: #409eff;
-}
+    * { margin:0; padding:0; box-sizing:border-box; }
 
-body {
-    margin: 0;
-    background: var(--bg-dark);
-    font-family: system-ui, sans-serif;
-    color: var(--text-main);
-}
+    body {
+      margin: 0;
+      background: var(--bg-dark);
+      font-family: system-ui, -apple-system, sans-serif;
+      color: var(--text-main);
+      min-height: 100vh;
+    }
 
-/* ================= TOP BAR ================= */
+    .container {
+      max-width: 1160px;
+      margin: 40px auto;
+      background: var(--bg-panel);
+      padding: 30px 36px;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    }
 
-.topbar {
-    width: 100%;
-    padding: 12px 22px;
-    background: #10131a;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: center;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.45);
-}
+    h1 {
+      margin: 0 0 20px 0;
+      color: #60a5fa;
+      font-size: 2.4rem;
+      text-shadow: 0 0 16px rgba(96,165,250,0.5);
+    }
 
-.topbar-inner {
-    width: 100%;
-    max-width: 1150px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
+    .forum-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
 
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
+    .new-thread-btn {
+      background: linear-gradient(135deg, var(--green), #16a34a);
+      color: white;
+      padding: 12px 28px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1.05rem;
+      box-shadow: 0 6px 20px rgba(34,197,94,0.4);
+      transition: all 0.25s ease;
+    }
 
-.logo-badge {
-    width: 36px;
-    height: 36px;
-    border-radius: 6px;
-    background: linear-gradient(135deg, #66aaff, #194b8d);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 800;
-    font-size: 1.1rem;
-    box-shadow: 0 0 12px rgba(102,170,255,0.6);
-}
+    .new-thread-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(34,197,94,0.6);
+    }
 
-.logo-text {
-    font-weight: 700;
-    letter-spacing: 0.07em;
-    font-size: 1.1rem;
-    color: #67b7ff;
-    text-shadow: 0 0 10px rgba(103,183,255,0.4);
-}
+    #threadList {
+      min-height: 300px;
+    }
 
-.top-links {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-}
+    .thread-card {
+      background: var(--bg-panel);
+      border: 1.5px solid var(--border);
+      padding: 18px 22px;
+      border-radius: 14px;
+      margin-bottom: 18px;
+      transition: all 0.25s ease;
+      position: relative;
+    }
 
-.top-links a {
-    color: var(--text-soft);
-    text-decoration: none;
-    font-size: 0.92rem;
-    transition: 0.17s;
-}
+    .thread-card.sticky {
+      border-color: #22c55e;
+      background: var(--sticky-bg);
+      box-shadow: 0 0 20px rgba(34,197,94,0.2);
+    }
 
-.top-links a:hover {
-    color: var(--link);
-}
+    .thread-card.locked::after {
+      content: "🔒";
+      position: absolute;
+      top: 18px;
+      right: 20px;
+      font-size: 1.3rem;
+    }
 
-/* Donate */
-.donate-btn {
-    padding: 7px 14px;
-    border-radius: 8px;
-    background: linear-gradient(180deg, #3b82f6, #1e40af);
-    color: #e7f0ff !important;
-    font-weight: 600;
-    text-decoration: none;
-}
+    .thread-card:hover {
+      background: var(--bg-panel-hover);
+      transform: translateY(-4px);
+      border-color: #3b82f6;
+    }
 
-/* ================= PAGE WRAPPER ================= */
+    .thread-horizontal {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
 
-.container {
-    max-width: 1150px;
-    margin: 40px auto;
-    background: var(--bg-panel);
-    padding: 26px 32px;
-    border-radius: 14px;
-    border: 1px solid var(--border);
-    box-shadow: 0 0 30px rgba(0,0,0,0.5);
-}
+    .avatar.small {
+      width: 46px;
+      height: 46px;
+      border-radius: 8px;
+      background: #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 1.1rem;
+      color: #94a3b8;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
 
-/* Header */
-h1 {
-    margin-top: 0;
-    margin-bottom: 16px;
-    color: #67b7ff;
-    text-shadow: 0 0 12px rgba(103,183,255,0.4);
-}
+    .thread-title {
+      color: #e0f2fe;
+      font-weight: 600;
+      font-size: 1.18rem;
+      text-decoration: none;
+      display: block;
+      margin-bottom: 6px;
+    }
 
-.new-thread {
-    display: inline-block;
-    margin-bottom: 18px;
-    color: #4ade80;
-    font-weight: 600;
-    text-decoration: none;
-    font-size: 0.95rem;
-}
+    .thread-title:hover { color: #60a5fa; }
 
-.new-thread:hover {
-    text-decoration: underline;
-}
+    .thread-meta {
+      display: flex;
+      gap: 20px;
+      font-size: 0.92rem;
+      color: var(--text-soft);
+      flex-wrap: wrap;
+    }
 
-/* ================= THREAD LIST ================= */
+    .thread-meta span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
 
-.thread-card {
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
-    padding: 14px 18px;
-    border-radius: 10px;
-    margin-bottom: 14px;
-    transition: 0.18s;
-}
+    .loading, .empty, .error {
+      text-align: center;
+      padding: 60px 20px;
+      font-size: 1.2rem;
+    }
 
-.thread-card:hover {
-    background: var(--bg-panel-hover);
-    border-color: #2c3547;
-}
-
-.thread-horizontal {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-}
-
-.avatar.small {
-    width: 38px;
-    height: 38px;
-    border-radius: 4px;
-    background: #222836;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    color: #9ca3af;
-    font-size: 1rem;
-}
-
-.thread-title {
-    flex: 1;
-    color: #e7f0ff;
-    font-weight: 600;
-    font-size: 1.05rem;
-    text-decoration: none;
-}
-
-.thread-title:hover {
-    color: #67b7ff;
-}
-
-.thread-user a {
-    font-size: 0.85rem;
-    color: var(--text-soft);
-    text-decoration: none;
-}
-
-.thread-date {
-    font-size: 0.85rem;
-    color: #6b7280;
-}
-
-.thread-comments {
-    font-size: 0.85rem;
-    color: #8b93a2;
-}
-
-.loading {
-    color: #67b7ff;
-}
-
-.empty {
-    color: #9ca3af;
-    font-style: italic;
-}
-
-.error {
-    color: #ef4444;
-}
-
-</style>
+    .loading { color: #60a5fa; }
+    .empty { color: #94a3b8; font-style: italic; }
+    .error { color: #ef4444; }
+  </style>
 </head>
 
 <body>
 
-<!-- ================= TOP BAR ================= -->
-<div class="topbar">
-  <div class="topbar-inner">
+  <!-- ЕДИНСТВЕН ТОПБАР -->
+  <div id="topbar"></div>
 
-    <div class="logo">
-      <div class="logo-badge">Z</div>
-      <div class="logo-text">Zvekisha Dota Hub</div>
+  <div class="container">
+    <div class="forum-header">
+      <h1>Форум</h1>
+      <a href="new-thread.html" class="new-thread-btn">+ Нова тема</a>
     </div>
 
-    <div class="top-links">
-      <a href="main.html">Главна</a>
-      <a href="#" id="profileLink">Профил</a>
-      <a href="#" onclick="logoutUser()">Одјави се</a>
-      <a href="https://www.paypal.com/paypalme/Zvekisha" target="_blank" class="donate-btn">Donate</a>
+    <div id="threadList">
+      <div class="loading">Вчитувам теми...</div>
     </div>
-
   </div>
-</div>
 
-<!-- ================= CONTENT ================= -->
-<div class="container">
+  <!-- Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    <h1>Форум</h1>
+  <script src="js/firebase-config.js?v=1"></script>
+  <script src="js/forum.js?v=1"></script>
 
-    <a href="new-thread.html" class="new-thread">➕ Нова тема</a>
-
-    <div id="threadList"></div>
-
-</div>
-
-<!-- FIREBASE -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-<script src="js/firebase-config.js"></script>
-<script src="js/forum.js"></script>
-
-<script>
-function logoutUser() {
-    auth.signOut().then(() => location.href = "index.html");
-}
-</script>
+  <script src="js/topbar.js?v=1"></script>
+  <script>
+    setTimeout(() => {
+      if (typeof window.loadTopbar === "function") window.loadTopbar();
+    }, 1200);
+  </script>
 
 </body>
 </html>
-
