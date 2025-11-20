@@ -1,39 +1,32 @@
-// api/steam-login.js
+// api/steam-login.js – ФИНАЛНА ВЕРЗИЈА 20.11.2025
 const openid = require("openid");
 
 module.exports = (req, res) => {
-  const callback = process.env.STEAM_CALLBACK_URL;
+  // Проверка за callback URL
+  const STEAM_CALLBACK_URL = process.env.STEAM_CALLBACK_URL;
 
-  // 🛑 Без callback URL нема login — прави стабилна проверка
-  if (!callback) {
-    console.error("🚨 ERROR: Missing STEAM_CALLBACK_URL in Vercel environment!");
-    return res.status(500).send("Server configuration error.");
+  if (!STEAM_CALLBACK_URL) {
+    console.error("STEAM_CALLBACK_URL не е поставен во Vercel Environment Variables!");
+    return res.status(500).send("Серверска грешка – контакт со админ.");
   }
 
-  // 🟢 OpenID конфигурација за Steam
+  // OpenID Relying Party
   const relyingParty = new openid.RelyingParty(
-    callback,  // каде Steam треба да те врати
-    null,      // без realm — Vercel HTTPS е доволен
-    true,      // stateless
-    false,     // insecure = false (Vercel е HTTPS)
-    []         // опции
+    STEAM_CALLBACK_URL,     // каде Steam враќа
+    null,                   // realm (не е потребен на Vercel HTTPS)
+    true,                   // stateless
+    false,                  // strict mode (препорачано)
+    []                      // extensions
   );
 
-  // 🟢 Започни Steam login redirect
-  relyingParty.authenticate(
-    "https://steamcommunity.com/openid",
-    false,
-    (err, url) => {
-      if (err || !url) {
-        console.error("🚨 Steam login error:", err);
-        return res.status(500).send("Steam login error.");
-      }
-
-      // 🟢 Debug log (ќе го гледаш во Vercel → Logs)
-      console.log("🔗 Redirecting to Steam OpenID:", url);
-
-      // 🟢 Префрли го корисникот на Steam за login
-      res.redirect(302, url);
+  // Започни Steam OpenID login
+  relyingParty.authenticate("https://steamcommunity.com/openid", false, (error, authUrl) => {
+    if (error || !authUrl) {
+      console.error("Steam OpenID грешка:", error?.message || "Нема URL");
+      return res.status(500).send("Не можев да се поврзам со Steam. Обиди се повторно.");
     }
-  );
+
+    console.log("Успешно генериран Steam login URL →", authUrl);
+    res.redirect(302, authUrl);
+  });
 };
