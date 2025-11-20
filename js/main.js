@@ -1,107 +1,131 @@
 // =======================================================
-// Steam TOKEN Login – ОБАВЕЗНО ЗА STEAM LOGIN
+// 1) Чекај Firebase да се вчита
 // =======================================================
-const urlParams = new URLSearchParams(window.location.search);
-const steamToken = urlParams.get("steamToken");
+document.addEventListener("DOMContentLoaded", async () => {
 
-// Ако има steamToken → направи Firebase login
-if (steamToken) {
-  auth.signInWithCustomToken(steamToken)
-    .then(() => {
-      console.log("Steam Firebase login успешно!");
+  console.log("main.js стартува...");
 
-      // Исчисти го token-от од URL-от (опционално, но подобро)
+  // Сигурност: чекај 200ms да се вчита firebase-config.js
+  await new Promise(res => setTimeout(res, 200));
+
+  if (!firebase || !firebase.auth) {
+    console.error("❌ Firebase не е иницијализиран!");
+    alert("Грешка: Firebase не е иницијализиран.");
+    return;
+  }
+
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
+  // =======================================================
+  // 2) Читање steamToken од URL
+  // =======================================================
+  const urlParams = new URLSearchParams(window.location.search);
+  const steamToken = urlParams.get("steamToken");
+
+  if (steamToken) {
+    console.log("Пронајден Steam token → пробувам Firebase login...");
+
+    try {
+      await auth.signInWithCustomToken(steamToken);
+
+      console.log("✔ Steam Firebase login резултат: Успешно!");
+
+      // Исчисти го token од URL
       window.history.replaceState({}, document.title, "main.html");
-    })
-    .catch(err => {
-      console.error("Грешка при Steam Firebase login:", err);
+
+    } catch (err) {
+      console.error("❌ Грешка при Steam Firebase login:", err);
       alert("Грешка при поврзување со Steam. Обиди се повторно.");
       location.href = "index.html";
-    });
-}
-
-// =======================================================
-// ОРИГИНАЛЕН MAIN.JS КОД (НЕПРЕМЕНЕТ, САМО СРЕДЕН)
-// =======================================================
-
-let currentUser = null;
-
-auth.onAuthStateChanged(async user => {
-  if (!user) {
-    location.href = "index.html";
-    return;
+      return;
+    }
   }
 
-  if (!user.uid.startsWith("steam:")) {
-    alert("Само Steam login е дозволен.");
-    auth.signOut();
-    return;
-  }
+  // =======================================================
+  // 3) Следење на корисник
+  // =======================================================
+  auth.onAuthStateChanged(async user => {
 
-  currentUser = user;
-
-  const userDoc = await db.collection("users").doc(user.uid).get();
-  const userData = userDoc.exists ? userDoc.data() : {};
-
-  if (userData.banned === true) {
-    alert("Баниран си од сајтот.");
-    auth.signOut();
-    return;
-  }
-
-  // Име и аватар
-  if (userData.username) {
-    document.querySelectorAll("#userName").forEach(el => el.textContent = userData.username);
-  }
-
-  if (userData.avatarUrl) {
-    document.querySelectorAll("#userAvatar, .avatar-big").forEach(el => {
-      el.style.backgroundImage = `url(${userData.avatarUrl})`;
-      el.textContent = "";
-    });
-  }
-
-  // ADMIN / MOD КОПЧИЊА
-  const role = (userData.role || "member").toLowerCase();
-  const topLinks = document.querySelector(".top-links");
-  if (topLinks && (role === "admin" || role === "moderator")) {
-    if (topLinks.querySelector(".admin-btn, .mod-btn")) return; // спречи дупликати
-
-    if (role === "admin") {
-      topLinks.insertAdjacentHTML("beforeend", 
-        `<a href="admin.html" class="admin-btn">
-          Админ Панел
-        </a>`
-      );
+    if (!user) {
+      console.warn("⚠ Нема корисник, враќам назад на index...");
+      location.href = "index.html";
+      return;
     }
 
-    topLinks.insertAdjacentHTML("beforeend", 
-      `<a href="dashboard.html" class="mod-btn">
-        Мод Панел
-      </a>`
-    );
-  }
+    if (!user.uid.startsWith("steam:")) {
+      alert("Само Steam login е дозволен.");
+      auth.signOut();
+      return;
+    }
 
-  // Онлајн статус
-  await db.collection("users").doc(user.uid).set({
-    online: true,
-    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-  }, { merge: true });
+    console.log("✔ Корисник е најавен:", user.uid);
 
-  loadGlobalStats();
-  loadLiveMatches();
+    const userRef = db.collection("users").doc(user.uid);
+    const snap = await userRef.get();
+    const userData = snap.exists ? snap.data() : {};
 
-  // Пинг за онлајн
-  setInterval(() => {
-    db.collection("users").doc(user.uid).update({
+    // Бан чек
+    if (userData.banned === true) {
+      alert("БАНИРАН СИ ОД САЈТОТ!");
+      auth.signOut();
+      return;
+    }
+
+    // UI Ажурирање
+    document.querySelectorAll("#userName").forEach(el => {
+      el.textContent = userData.username || "Играч";
+    });
+
+    if (userData.avatarUrl) {
+      document.querySelectorAll("#userAvatar, .avatar-big").forEach(el => {
+        el.style.backgroundImage = `url(${userData.avatarUrl})`;
+        el.textContent = "";
+      });
+    }
+
+    // Роли
+    const role = (userData.role || "member").toLowerCase();
+    const topLinks = document.querySelector(".top-links");
+
+    if (topLinks && (role === "admin" || role === "moderator")) {
+      if (!topLinks.querySelector(".admin-btn")) {
+        if (role === "admin") {
+          topLinks.insertAdjacentHTML("beforeend",
+            `<a href="admin.html" class="admin-btn">Админ Панел</a>`
+          );
+        }
+        topLinks.insertAdjacentHTML("beforeend",
+          `<a href="dashboard.html" class="mod-btn">Мод Панел</a>`
+        );
+      }
+    }
+
+    // Онлајн статус
+    userRef.set({
+      online: true,
       lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-    }).catch(() => {});
-  }, 30000);
+    }, { merge: true });
+
+    // Онлајн пинг
+    setInterval(() => {
+      userRef.update({
+        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }, 30000);
+
+    // Статистики
+    loadStats(db);
+    loadLiveMatches(db);
+
+  });
+
 });
 
-// Глобални статистики
-function loadGlobalStats() {
-  // Онлајн корисници
+// =======================================================
+// 4) Функции за статистики
+// =======================================================
+function loadStats(db) {
   db.collection("users")
     .where("online", "==", true)
     .onSnapshot(snap => {
@@ -109,25 +133,21 @@ function loadGlobalStats() {
       if (el) el.textContent = snap.size;
     });
 
-  // Статистики од /stats/community
   const statsRef = db.collection("stats").doc("community");
   statsRef.onSnapshot(snap => {
     if (!snap.exists) return;
     const d = snap.data();
 
-    const memberEl = document.getElementById("memberCount");
-    if (memberEl) memberEl.textContent = d.members || 0;
-
-    const threadEl = document.getElementById("threadCount");
-    if (threadEl) threadEl.textContent = d.threads || 0;
-
-    const commentEl = document.getElementById("commentCount");
-    if (commentEl) commentEl.textContent = d.comments || 0;
+    document.getElementById("memberCount").textContent = d.members || 0;
+    document.getElementById("threadCount").textContent = d.threads || 0;
+    document.getElementById("commentCount").textContent = d.comments || 0;
   });
 }
 
-// Live мечеви
-async function loadLiveMatches() {
+// =======================================================
+// 5) Live matches
+// =======================================================
+async function loadLiveMatches(db) {
   const container = document.getElementById("liveMatches");
   if (!container) return;
 
@@ -136,7 +156,6 @@ async function loadLiveMatches() {
   try {
     const snap = await db.collection("users")
       .where("inGame", "==", true)
-      .limit(10)
       .get();
 
     if (snap.empty) {
@@ -145,17 +164,20 @@ async function loadLiveMatches() {
     }
 
     let html = "<div style='font-weight:600;color:#22c55e;margin-bottom:10px;'>Активни мечеви:</div>";
+
     snap.forEach(doc => {
       const u = doc.data();
-      html += `<div style="margin:8px 0;padding:10px;background:rgba(34,197,94,0.15);border-radius:10px;font-weight:500;">
-                 <strong>${u.username || "Играч"}</strong> е во Dota 2 меч!
-               </div>`;
+      html += `
+        <div style="margin:6px 0;padding:10px;background:rgba(34,197,94,0.15);
+             border-radius:10px;font-weight:500;">
+        <strong>${u.username}</strong> е во Dota 2 меч!
+        </div>`;
     });
+
     container.innerHTML = html;
 
-  } catch (e) {
+  } catch (err) {
+    console.error(err);
     container.innerHTML = "Грешка при проверка.";
-    console.error(e);
   }
 }
-
