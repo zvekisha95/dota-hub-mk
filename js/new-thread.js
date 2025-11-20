@@ -1,86 +1,103 @@
-// ─────────────────────────────
-// INIT
-// ─────────────────────────────
+// js/new-thread.js – ФИНАЛНА ВЕРЗИЈА 20.11.2025
+// Објавување нова тема – со валидација и убави пораки
+
 let currentUser = null;
 
-// ─────────────────────────────
-// AUTH CHECK (Steam FIXED)
-// ─────────────────────────────
+// AUTH + БАН ПРОВЕРКА
 auth.onAuthStateChanged(async user => {
+  if (!user || !user.uid.startsWith("steam:")) {
+    location.href = "index.html";
+    return;
+  }
 
-    const isSteamUser =
-        user && typeof user.uid === "string" && user.uid.startsWith("steam:");
+  currentUser = user;
 
-    if (!user) {
-        location.href = "index.html";
-        return;
-    }
+  // Земи податоци
+  const doc = await db.collection("users").doc(user.uid).get();
+  const data = doc.exists ? doc.data() : {};
 
-    if (!isSteamUser && user.email && !user.emailVerified) {
-        alert("Прво мора да ја верификуваш email адресата.");
-        location.href = "index.html";
-        return;
-    }
-
-    currentUser = user;
-
-    // check ban
-    const doc = await db.collection("users").doc(user.uid).get();
-    const data = doc.exists ? doc.data() : {};
-
-    if (data.banned === true) {
-        alert("Баниран си од објавување теми.");
-        location.href = "forum.html";
-        return;
-    }
+  if (data.banned === true) {
+    alert("⛔ Баниран си од објавување теми!");
+    location.href = "forum.html";
+    return;
+  }
 });
 
-// ─────────────────────────────
-// POST THREAD
-// ─────────────────────────────
+// ОБЈАВУВАЊЕ ТЕМА
 async function postThread() {
-    const title = document.getElementById("threadTitle").value.trim();
-    const body = document.getElementById("threadBody").value.trim();
-    const statusEl = document.getElementById("postStatus");
+  const titleEl = document.getElementById("threadTitle");
+  const bodyEl = document.getElementById("threadBody");
+  const statusEl = document.getElementById("postStatus");
+  const submitBtn = document.querySelector("button[type='submit']") || document.querySelector("button");
 
-    statusEl.textContent = "";
-    statusEl.className = "status";
+  const title = titleEl.value.trim();
+  const body = bodyEl.value.trim();
 
-    if (!title || !body) {
-        statusEl.textContent = "Сите полиња мора да бидат пополнети!";
-        statusEl.classList.add("error");
-        return;
-    }
+  // Ресетирај статус
+  statusEl.textContent = "";
+  statusEl.className = "status";
 
-    try {
-        statusEl.textContent = "Објавувам...";
-        statusEl.classList.add("loading");
+  // Валидација
+  if (!title || title.length < 3) {
+    statusEl.textContent = "Насловот мора да има барем 3 карактери!";
+    statusEl.classList.add("error");
+    titleEl.focus();
+    return;
+  }
 
-        const u = (await db.collection("users").doc(currentUser.uid).get()).data();
+  if (!body || body.length < 10) {
+    statusEl.textContent = "Содржината мора да има барем 10 карактери!";
+    statusEl.classList.add("error");
+    bodyEl.focus();
+    return;
+  }
 
-        await db.collection("threads").add({
-            title,
-            body,
-            author: u.username || currentUser.email,
-            authorId: currentUser.uid,
-            avatarUrl: u.avatarUrl || "",
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            locked: false,
-            sticky: false
-        });
+  if (title.length > 120) {
+    statusEl.textContent = "Насловот е премногу долг (макс 120 карактери)!";
+    statusEl.classList.add("error");
+    return;
+  }
 
-        statusEl.textContent = "Успешно објавена тема!";
-        statusEl.classList.remove("loading");
-        statusEl.classList.add("success");
+  // Дезаблејрај копче
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Објавувам...";
 
-        setTimeout(() => {
-            location.href = "forum.html";
-        }, 600);
+  try {
+    const userDoc = await db.collection("users").doc(currentUser.uid).get();
+    const userData = userDoc.data();
 
-    } catch (err) {
-        console.error("THREAD ERROR:", err);
-        statusEl.textContent = "Грешка. Обиди се повторно.";
-        statusEl.classList.add("error");
-    }
+    await db.collection("threads").add({
+      title,
+      body,
+      author: userData.username || "Корисник",
+      authorId: currentUser.uid,
+      avatarUrl: userData.avatarUrl || "",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      locked: false,
+      sticky: false,
+      flagged: false,
+      commentCount: 0
+    });
+
+    statusEl.textContent = "Твојата тема е објавена! Пренасочувам... ✅";
+    statusEl.classList.add("success");
+
+    setTimeout(() => {
+      location.href = "forum.html";
+    }, 1200);
+
+  } catch (err) {
+    console.error("Грешка при објавување тема:", err);
+    statusEl.textContent = "Грешка при објавување. Обиди се повторно.";
+    statusEl.classList.add("error");
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Објави тема";
+  }
 }
+
+// Форма submit (за подобар UX)
+document.getElementById("newThreadForm")?.addEventListener("submit", e => {
+  e.preventDefault();
+  postThread();
+});
 
