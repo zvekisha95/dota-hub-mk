@@ -1,18 +1,22 @@
-// js/forum.js – ФИНАЛНА ВЕРЗИЈА 20.11.2025
-// Infinite scroll + Sticky + Locked + Real-time коментари
+// js/forum.js – SUPER UPGRADED 21.11.2025
 
 let currentUser = null;
 let userRole = "member";
 let lastDoc = null;
-const limit = 20; // теми по страница
+const limit = 20;
 
+// Escape HTML
 function escapeHtml(t) {
   const div = document.createElement("div");
   div.textContent = t;
   return div.innerHTML;
 }
 
+// ───────────────────────────────────────────────
+// AUTH
+// ───────────────────────────────────────────────
 auth.onAuthStateChanged(async user => {
+
   if (!user) {
     location.href = "index.html";
     return;
@@ -24,7 +28,7 @@ auth.onAuthStateChanged(async user => {
   const profileLink = document.getElementById("profileLink");
   if (profileLink) profileLink.href = `profile.html?id=${user.uid}`;
 
-  // Бан проверка
+  // User data
   const doc = await db.collection("users").doc(user.uid).get();
   const data = doc.exists ? doc.data() : {};
 
@@ -36,7 +40,7 @@ auth.onAuthStateChanged(async user => {
 
   userRole = data.role || "member";
 
-  // Вчитај први теми
+  // Load threads
   loadThreads(true);
 
   // Infinite scroll
@@ -47,11 +51,14 @@ auth.onAuthStateChanged(async user => {
   });
 });
 
-// Главна функција за вчитување теми
+
+// ───────────────────────────────────────────────
+// LOAD THREADS (with sticky + lock + views + commentsCount)
+// ───────────────────────────────────────────────
 async function loadThreads(isFirstLoad = false) {
-  if (!isFirstLoad && !lastDoc) return; // нема повеќе
 
   const list = document.getElementById("threadList");
+
   if (isFirstLoad) {
     list.innerHTML = `<div class="loading">Вчитувам теми...</div>`;
   }
@@ -59,7 +66,7 @@ async function loadThreads(isFirstLoad = false) {
   try {
     let query = db.collection("threads")
       .orderBy("sticky", "desc")
-      .orderBy("createdAt", "desc")
+      .orderBy("lastActivity", "desc")
       .limit(limit);
 
     if (!isFirstLoad && lastDoc) {
@@ -70,7 +77,7 @@ async function loadThreads(isFirstLoad = false) {
 
     if (snap.empty) {
       if (isFirstLoad) {
-        list.innerHTML = `<div class="empty">Нема објавени теми. Биди првиот! 🚀</div>`;
+        list.innerHTML = `<div class="empty">Нема теми. Напиши прва! 🚀</div>`;
       }
       lastDoc = null;
       return;
@@ -78,19 +85,20 @@ async function loadThreads(isFirstLoad = false) {
 
     if (isFirstLoad) list.innerHTML = "";
 
-    snap.forEach(doc => {
+    snap.docs.forEach(doc => {
       const t = doc.data();
       const id = doc.id;
 
       const isSticky = t.sticky === true;
       const isLocked = t.locked === true;
       const commentsCount = t.commentCount || 0;
+      const views = t.views || 0;
 
       const title = escapeHtml(t.title || "Без наслов");
       const author = escapeHtml(t.author || "Корисник");
       const authorId = t.authorId || "";
 
-      const date = t.createdAt?.toDate?.().toLocaleString("mk-MK", {
+      const date = t.lastActivity?.toDate?.().toLocaleString("mk-MK", {
         day: "2-digit",
         month: "short",
         hour: "2-digit",
@@ -100,7 +108,9 @@ async function loadThreads(isFirstLoad = false) {
       const hue = (author.charCodeAt(0) || 0) * 7 % 360;
 
       const html = `
-        <div class="thread-card ${isSticky ? "sticky" : ""}" style="${isSticky ? "border-left:5px solid #22c55e;background:rgba(34,197,94,0.08)" : ""}">
+        <div class="thread-card ${isSticky ? "sticky" : ""}"
+             style="${isSticky ? "border-left:5px solid #22c55e;background:rgba(34,197,94,0.08)" : ""}">
+
           <div class="thread-horizontal">
 
             <div class="avatar small" style="background:hsl(${hue},70%,55%)">
@@ -117,9 +127,8 @@ async function loadThreads(isFirstLoad = false) {
 
             <span class="thread-date">${date}</span>
 
-            <span class="thread-comments">
-              💬 ${commentsCount} ${commentsCount === 1 ? "коментар" : "коментари"}
-            </span>
+            <span class="thread-comments">💬 ${commentsCount}</span>
+            <span class="thread-views">👁️ ${views}</span>
 
           </div>
         </div>
@@ -129,8 +138,6 @@ async function loadThreads(isFirstLoad = false) {
     });
 
     lastDoc = snap.docs[snap.docs.length - 1];
-
-    // Ако има помалку од limit – крај
     if (snap.size < limit) lastDoc = null;
 
   } catch (err) {
@@ -138,3 +145,4 @@ async function loadThreads(isFirstLoad = false) {
     list.innerHTML += `<div class="error">Грешка при вчитување.</div>`;
   }
 }
+
