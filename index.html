@@ -2,36 +2,396 @@
 <html lang="mk">
 <head>
   <meta charset="UTF-8">
-  <title>Zvekisha Dota Hub</title>
+  <title>Zvekisha Dota Hub – Најди се со нас</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
-    body{margin:0;padding:0;min-height:100vh;background:url("https://wallpapercave.com/wp/wp2596601.jpg") center/cover fixed;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;color:white}
-    .card{background:rgba(0,0,0,0.82);padding:60px 40px;border-radius:32px;text-align:center;max-width:500px;box-shadow:0 40px 100px rgba(0,0,0,0.95);border:2px solid rgba(59,130,246,0.5)}
-    h1{font-size:3.2rem;margin:0 0 15px;background:linear-gradient(135deg,#60a5fa,#3b82f6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    p{font-size:1.25rem;margin:22px 0;opacity:0.94}
-    .login-btn{
-      margin-top:40px;padding:16px 50px;background:#171a21;color:white;border-radius:8px;font-weight:bold;font-size:1.5rem;text-decoration:none;display:inline-block;box-shadow:0 10px 30px rgba(0,0,0,0.7);transition:all 0.3s
+    :root {
+      --steam-blue: #171a21;
+      --accent: #66aaff;
+      --glow: rgba(102,170,255,0.6);
     }
-    .login-btn:hover{transform:translateY(-4px);box-shadow:0 15px 40px rgba(0,0,0,0.8)}
-    .footer{margin-top:50px;font-size:1rem;opacity:0.8}
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.9)), url("https://wallpapercave.com/wp/wp2596601.jpg") center/cover fixed;
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      position: relative;
+    }
+
+    .maintenance-overlay {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at top, rgba(15,23,42,0.96) 0, rgba(15,23,42,0.98) 45%, #020617 100%);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+
+    .maintenance-overlay.show {
+      display: flex;
+    }
+
+    .maintenance-box {
+      max-width: 520px;
+      padding: 32px 28px;
+      border-radius: 20px;
+      background: rgba(15,23,42,0.98);
+      border: 1px solid rgba(248,250,252,0.1);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+      text-align: center;
+    }
+
+    .maintenance-box h2 {
+      font-size: 1.8rem;
+      margin-bottom: 12px;
+      color: #e5e7eb;
+    }
+
+    .maintenance-box p {
+      color: #9ca3af;
+      font-size: 0.98rem;
+      line-height: 1.6;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(248,250,252,0.06);
+      color: #e5e7eb;
+      font-size: 0.8rem;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .badge span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #facc15;
+      box-shadow: 0 0 10px rgba(250,204,21,0.8);
+    }
+
+    .badge strong {
+      color: #facc15;
+    }
+
+    .badge-sub {
+      display: block;
+      margin-top: 6px;
+      font-size: 0.78rem;
+      color: #9ca3af;
+    }
+
+    .small-footer {
+      margin-top: 18px;
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+
+    .small-footer a {
+      color: #93c5fd;
+      text-decoration: none;
+    }
+
+    .small-footer a:hover {
+      text-decoration: underline;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 480px;
+      width: 100%;
+      margin: 20px;
+      padding: 40px 32px 32px 32px;
+      border-radius: 28px;
+      background: radial-gradient(circle at top left,
+        rgba(148,163,184,0.12) 0,
+        rgba(15,23,42,0.96) 42%,
+        rgba(15,23,42,0.99) 100%);
+      border: 1px solid rgba(148,163,184,0.35);
+      box-shadow:
+        0 0 70px rgba(15,23,42,0.95),
+        0 0 140px rgba(15,23,42,0.9);
+      backdrop-filter: blur(20px);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .logo-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background:
+        radial-gradient(circle at 30% 0%, #e5e7eb 0, #60a5fa 40%, #1d4ed8 60%, #020617 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 1.4rem;
+      color: #f9fafb;
+      box-shadow:
+        0 0 25px rgba(96,165,250,0.9),
+        0 0 45px rgba(37,99,235,0.7);
+    }
+
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .logo-title {
+      font-size: 1.2rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #e5e7eb;
+      text-shadow: 0 0 18px rgba(148,163,184,0.8);
+    }
+
+    .logo-sub {
+      font-size: 0.88rem;
+      color: #9ca3af;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      margin: 6px 0 10px 0;
+      color: #e5e7eb;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      text-shadow: 0 0 30px rgba(255,255,255,0.18);
+    }
+
+    .subtitle {
+      font-size: 0.96rem;
+      color: #9ca3af;
+      line-height: 1.6;
+      margin-bottom: 22px;
+    }
+
+    .bullets {
+      margin-bottom: 24px;
+      padding-left: 18px;
+      color: #cbd5f5;
+      font-size: 0.9rem;
+    }
+
+    .bullets li {
+      margin-bottom: 4px;
+    }
+
+    .login-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      padding: 13px 18px;
+      background: radial-gradient(circle at top left,
+        #ffffff 0,
+        #66aaff 30%,
+        #171a21 60%,
+        #020617 100%);
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.8);
+      box-shadow:
+        0 0 25px rgba(56,189,248,0.5),
+        0 0 60px rgba(37,99,235,0.8);
+      color: #e5e7eb;
+      font-weight: 700;
+      text-decoration: none;
+      font-size: 1rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-top: 4px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    }
+
+    .login-btn img {
+      height: 22px;
+      filter: drop-shadow(0 0 8px rgba(15,23,42,0.9));
+    }
+
+    .login-btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.06);
+      box-shadow:
+        0 0 40px rgba(56,189,248,0.7),
+        0 0 90px rgba(37,99,235,0.95);
+    }
+
+    .login-btn:active {
+      transform: translateY(0);
+      box-shadow:
+        0 0 25px rgba(56,189,248,0.5),
+        0 0 60px rgba(37,99,235,0.8);
+    }
+
+    .footer {
+      margin-top: 20px;
+      font-size: 0.85rem;
+      color: #6b7280;
+      text-align: center;
+    }
+
+    .footer strong {
+      color: #e5e7eb;
+    }
+
+    .steam-tagline {
+      margin-top: 18px;
+      font-size: 0.86rem;
+      color: #9ca3af;
+      text-align: center;
+    }
+
+    .steam-tagline span {
+      color: #93c5fd;
+    }
+
+    .glow-orb {
+      position: fixed;
+      border-radius: 999px;
+      filter: blur(90px);
+      opacity: 0.65;
+      z-index: 0;
+    }
+
+    .glow-1 {
+      width: 260px;
+      height: 260px;
+      background: rgba(59,130,246,0.65);
+      top: -60px;
+      left: -40px;
+    }
+
+    .glow-2 {
+      width: 220px;
+      height: 220px;
+      background: rgba(56,189,248,0.4);
+      bottom: -60px;
+      right: -40px;
+    }
+
+    @media (max-width: 540px) {
+      .container {
+        padding: 28px 18px 22px 18px;
+        margin: 16px;
+      }
+      h1 {
+        font-size: 1.9rem;
+      }
+      .logo-title {
+        font-size: 1rem;
+      }
+      .bullets {
+        font-size: 0.86rem;
+      }
+    }
   </style>
 </head>
-<body>
-  <div class="card">
-    <h1>Zvekisha Dota Hub</h1>
-    <p>Најголемата македонска Dota 2 заедница</p>
-    <p>Форум • MMR • Ранг • Статистики • Турнири</p>
 
-    <a href="https://steamcommunity.com/openid/login?openid.ns=http://specs.openid.net/auth/2.0&openid.mode=checkid_setup&openid.return_to=https://dota-hub-mk.vercel.app/api/steam-callback&openid.realm=https://dota-hub-mk.vercel.app&openid.identity=http://specs.openid.net/auth/2.0/identifier_select&openid.claimed_id=http://specs.openid.net/auth/2.0/identifier_select"
-       class="login-btn"
-       target="_blank"
-       rel="noopener">
-      Login with Steam
+<body>
+
+  <div class="glow-orb glow-1"></div>
+  <div class="glow-orb glow-2"></div>
+
+  <!-- Maintenance overlay -->
+  <div class="maintenance-overlay" id="maintenanceOverlay">
+    <div class="maintenance-box">
+      <div class="badge">
+        <span></span> <strong>Одржување</strong>
+      </div>
+      <h2>Сајтот моментално се ажурира</h2>
+      <p id="maintenanceMessage">
+        Работиме на нови функции и подобрувања за Zvekisha Dota Hub.
+        Ве молиме обидете се повторно за неколку минути.
+      </p>
+      <div class="small-footer">
+        Ова известување го гледаш бидејќи админот го вклучил <b>Maintenance mode</b> од контрол панелот.<br>
+        Ако мислиш дека ова е грешка, контактирај го админот на <a href="mailto:no-reply@zvekisha.mk">no-reply@zvekisha.mk</a>.
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="logo">
+      <div class="logo-badge">Z</div>
+      <div class="logo-text">
+        <div class="logo-title">Zvekisha Dota Hub</div>
+        <div class="logo-sub">македонска Dota 2 екипа • само за наши луѓе</div>
+      </div>
+    </div>
+
+    <h1>Влези преку Steam</h1>
+    <p class="subtitle">
+      Приватен Dota 2 хаб за македонци: Discord-стил дружење, статистики, форум и matchmaking
+      со твојата Steam/Dota 2 екипа.
+    </p>
+
+    <ul class="bullets">
+      <li>✔ Приклучи се со твојот <b>Steam профил</b> – нема лозинка на сајтов</li>
+      <li>✔ Види Dota 2 MMR, winrate и последни мечеви</li>
+      <li>✔ Форум, теми, коментари и модератори од нашата заедница</li>
+      <li>✔ Приватен пристап – само луѓе што ги пушта админот</li>
+    </ul>
+
+    <p class="steam-tagline">
+      Најавата е преку <span>Steam OpenID</span> – ние никогаш не ја гледаме твојата лозинка.
+    </p>
+
+    <a href="#" id="steamLogin" class="login-btn">
+      <img src="https://steamcommunity-a.akamaihd.net/public/images/signinthroughsteam/sits_01.png" alt="Steam">
+      Login with STEAM
     </a>
 
     <div class="footer">
-      Само еден клик • Нема регистрација • Нема лозинка
+      Само еден клик • Нема регистрација • Нема лозинка<br>
+      Zvekisha Dota Hub © 2025 | Сите права се задржани
     </div>
   </div>
+
+  <!-- Scripts -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="js/firebase-config.js?v=1"></script>
+
+  <script>
+    // Проверка за Maintenance mode
+    const dbCheck = firebase.firestore();
+    dbCheck.collection("config").doc("maintenance").onSnapshot(doc => {
+      if (doc.exists && doc.data().enabled) {
+        document.getElementById("maintenanceOverlay").classList.add("show");
+        document.getElementById("maintenanceMessage").textContent = doc.data().message || "Сајтот е во одржување...";
+      }
+    });
+
+    // Steam Login URL (автоматски генерирање)
+    const currentUrl = encodeURIComponent(location.origin);
+    const steamLoginUrl = `https://steamcommunity.com/openid/login?openid.ns=http://specs.openid.net/auth/2.0&openid.mode=checkid_setup&openid.return_to=${currentUrl}/api/steam-callback&openid.realm=${currentUrl}&openid.ns.sreg=http://openid.net/extensions/sreg/1.1&openid.claimed_id=http://specs.openid.net/auth/2.0/identifier_select&openid.identity=http://specs.openid.net/auth/2.0/identifier_select`;
+
+    document.getElementById("steamLogin").href = steamLoginUrl;
+  </script>
+
 </body>
 </html>
+
