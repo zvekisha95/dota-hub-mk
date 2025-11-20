@@ -1,62 +1,72 @@
-// api/steam-user.js – ВРАЌАМЕ НА РАБОТЕЧКАТА ВЕРЗИЈА
-const fetch = require("node-fetch");
+// api/steam-user.js – ФИНАЛНА ВЕРЗИЈА 20.11.2025
+// Враќа Dota 2 податоци од OpenDota по steamId (32-битен)
+
+const fetch = require("node-fetch").default;
 
 module.exports = async (req, res) => {
   try {
     const { steamId } = req.query;
 
-    if (!steamId) {
-      return res.status(400).json({ success: false, error: "Missing steamId" });
+    if (!steamId || steamId.length < 5) {
+      return res.status(400).json({ success: false, error: "Недостасува или невалиден steamId" });
     }
 
-    const playerRes = await fetch(`https://api.opendota.com/api/players/${steamId}`);
+    // 1. Основни податоци + MMR + ранг
+    const playerUrl = `https://api.opendota.com/api/players/${steamId}`;
+    const playerRes = await fetch(playerUrl);
+
+    if (!playerRes.ok) {
+      return res.status(404).json({ success: false, error: "Играчот не е пронајден на OpenDota" });
+    }
+
     const playerData = await playerRes.json();
 
-    if (!playerData || !playerData.profile) {
-      return res.status(404).json({ success: false, error: "Player not found on OpenDota" });
-    }
+    // 2. Win/Loss статистика
+    const wlRes = await fetch(`https://api.opendota.com/api/players/${steamId}/wl`);
+    const wlData = wlRes.ok ? await wlRes.json() : { win: 0, lose: 0 };
 
-    const profile = playerData.profile;
+    // 3. Последни 20 мечиви
+    const recentRes = await fetch(`https://api.opendota.com/api/players/${steamId}/recentMatches`);
+    const recentMatches = recentRes.ok ? await recentRes.json() : [];
 
+    // Профил податоци
+    const profile = playerData.profile || {};
     const rankTier = playerData.rank_tier || null;
     const soloMMR = playerData.solo_competitive_rank || null;
     const partyMMR = playerData.competitive_rank || null;
 
-    const wlRes = await fetch(`https://api.opendota.com/api/players/${steamId}/wl`);
-    const wlData = await wlRes.json();
+    const totalGames = (wlData.win || 0) + (wlData.lose || 0);
+    const winrate = totalGames > 0 ? ((wlData.win / totalGames) * 100).toFixed(2) : 0;
 
-    const recentMatchesRes = await fetch(`https://api.opendota.com/api/players/${steamId}/recentMatches`);
-    const recentMatches = await recentMatchesRes.json();
-
-    const fullData = {
+    const response = {
       success: true,
       steamId: steamId,
-
       basic: {
-        name: profile.personaname || "Unknown",
+        name: profile.personaname || "Непознат играч",
         avatar: profile.avatarfull || "",
-        profileUrl: profile.profileurl || "",
+        profileUrl: profile.profileurl || `https://steamcommunity.com/profiles/${BigInt(steamId) + BigInt("76561197960265728")}`,
       },
-
       ranks: {
         rankTier,
         soloMMR,
-        partyMMR
+        partyMMR,
+        leaderboard: playerData.leaderboard_rank || null
       },
-
       stats: {
-        wins: wlData?.win || 0,
-        losses: wlData?.lose || 0,
-        winrate: wlData?.win && wlData?.lose ? (wlData.win / (wlData.win + wlData.lose)) * 100 : 0
+        wins: wlData.win || 0,
+        losses: wlData.lose || 0,
+        total: totalGames,
+        winrate: parseFloat(winrate)
       },
-
-      recentMatches: recentMatches || []
+      recentMatches: recentMatches.slice(0, 20) // земи само последни 20
     };
 
-    return res.status(200).json(.fullData);
+    // Кеширање за 5 минути (препорачано за OpenDota)
+    res.setHeader("Cache-Control", "public, max-age=300");
+    res.status(200).json(response);
 
   } catch (err) {
-    console.error("🔥 steam-user API error:", err);
-    res.status(500).json({ success: false, error: "Internal server error" });
+    console.error("steam-user API грешка:", err.message);
+    res.status(500).json({ success: false, error: "Серверска грешка" });
   }
 };
