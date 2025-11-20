@@ -1,5 +1,28 @@
-// js/main.js – ФИНАЛНА ВЕРЗИЈА 20.11.2025
-// Главна страница – онлајн каунтер, live мечеви, статистики
+// =======================================================
+// Steam TOKEN Login – ОБАВЕЗНО ЗА STEAM LOGIN
+// =======================================================
+const urlParams = new URLSearchParams(window.location.search);
+const steamToken = urlParams.get("steamToken");
+
+// Ако има steamToken → направи Firebase login
+if (steamToken) {
+  auth.signInWithCustomToken(steamToken)
+    .then(() => {
+      console.log("Steam Firebase login успешно!");
+
+      // Исчисти го token-от од URL-от (опционално, но подобро)
+      window.history.replaceState({}, document.title, "main.html");
+    })
+    .catch(err => {
+      console.error("Грешка при Steam Firebase login:", err);
+      alert("Грешка при поврзување со Steam. Обиди се повторно.");
+      location.href = "index.html";
+    });
+}
+
+// =======================================================
+// ОРИГИНАЛЕН MAIN.JS КОД (НЕПРЕМЕНЕТ, САМО СРЕДЕН)
+// =======================================================
 
 let currentUser = null;
 
@@ -46,14 +69,14 @@ auth.onAuthStateChanged(async user => {
 
     if (role === "admin") {
       topLinks.insertAdjacentHTML("beforeend", 
-        `<a href="admin.html" style="color:#ff4444;font-weight:bold;margin-left:18px;padding:6px 12px;border:2px solid #ff4444;border-radius:8px;background:rgba(239,68,68,0.15);">
+        `<a href="admin.html" class="admin-btn">
           Админ Панел
         </a>`
       );
     }
 
     topLinks.insertAdjacentHTML("beforeend", 
-      `<a href="dashboard.html" style="color:#ffaa00;font-weight:bold;margin-left:18px;padding:6px 12px;border:2px solid #ffaa00;border-radius:8px;background:rgba(255,170,0,0.15);">
+      `<a href="dashboard.html" class="mod-btn">
         Мод Панел
       </a>`
     );
@@ -92,7 +115,6 @@ function loadGlobalStats() {
     if (!snap.exists) return;
     const d = snap.data();
 
-    // ОВА Е ПРАВИЛНОТО Мапирање!
     const memberEl = document.getElementById("memberCount");
     if (memberEl) memberEl.textContent = d.members || 0;
 
