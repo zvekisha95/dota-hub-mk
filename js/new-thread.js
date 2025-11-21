@@ -1,5 +1,5 @@
-// js/new-thread.js – ФИНАЛНА ВЕРЗИЈА 20.11.2025
-// Објавување нова тема – со валидација и убави пораки
+// js/new-thread.js – PREMIUM FIXED 20.11.2025
+// Објавување нова тема – целосно усогласено со премиум thread.js
 
 let currentUser = null;
 
@@ -12,7 +12,6 @@ auth.onAuthStateChanged(async user => {
 
   currentUser = user;
 
-  // Земи податоци
   const doc = await db.collection("users").doc(user.uid).get();
   const data = doc.exists ? doc.data() : {};
 
@@ -23,21 +22,24 @@ auth.onAuthStateChanged(async user => {
   }
 });
 
-// ОБЈАВУВАЊЕ ТЕМА
+// ==========================================================
+// ОБЈАВУВАЊЕ НОВА ТЕМА
+// ==========================================================
 async function postThread() {
   const titleEl = document.getElementById("threadTitle");
   const bodyEl = document.getElementById("threadBody");
   const statusEl = document.getElementById("postStatus");
-  const submitBtn = document.querySelector("button[type='submit']") || document.querySelector("button");
+  const submitBtn =
+    document.querySelector("button[type='submit']") ||
+    document.querySelector("button");
 
   const title = titleEl.value.trim();
   const body = bodyEl.value.trim();
 
-  // Ресетирај статус
   statusEl.textContent = "";
   statusEl.className = "status";
 
-  // Валидација
+  // VALIDATION
   if (!title || title.length < 3) {
     statusEl.textContent = "Насловот мора да има барем 3 карактери!";
     statusEl.classList.add("error");
@@ -58,7 +60,7 @@ async function postThread() {
     return;
   }
 
-  // Дезаблејрај копче
+  // DISABLE BUTTON
   submitBtn.disabled = true;
   submitBtn.textContent = "Објавувам...";
 
@@ -66,6 +68,9 @@ async function postThread() {
     const userDoc = await db.collection("users").doc(currentUser.uid).get();
     const userData = userDoc.data();
 
+    // ==========================================================
+    // ЗАПИШУВАЊЕ НА ТЕМА (US-KOREKTNO, PREMIUM FORMAT)
+    // ==========================================================
     await db.collection("threads").add({
       title,
       body,
@@ -73,10 +78,14 @@ async function postThread() {
       authorId: currentUser.uid,
       avatarUrl: userData.avatarUrl || "",
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+
+      // PREMIUM систем полиња:
       locked: false,
       sticky: false,
       flagged: false,
-      commentCount: 0
+      commentCount: 0,
+      views: 0,   // ⭐ ОВА Е КЛУЧНО ЗА НОВИОТ thread.js !!!
+      lastActivity: firebase.firestore.FieldValue.serverTimestamp()
     });
 
     statusEl.textContent = "Твојата тема е објавена! Пренасочувам... ✅";
@@ -95,9 +104,8 @@ async function postThread() {
   }
 }
 
-// Форма submit (за подобар UX)
+// SUBMIT
 document.getElementById("newThreadForm")?.addEventListener("submit", e => {
   e.preventDefault();
   postThread();
 });
-
