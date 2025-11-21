@@ -1,48 +1,46 @@
 // js/thread.js – PREMIUM ВЕРЗИЈА 21.11.2025
-// - Real-time thread
-// - Views counter
-// - Lock / Unlock
-// - Live comments
+// - Real-time коментари
+// - 👍 Like систем
+// - Quote / Reply
+// - Edit & Delete сопствен коментар
+// - Flag (report)
+// - View counter
+// - Locked / Sticky поддршка
+// - Mod панел (admin / moderator)
 
 let currentUser = null;
 let currentUserRole = "member";
 let threadId = null;
 let threadData = null;
 
-let threadUnsub = null;
-let commentsUnsub = null;
-let viewsIncremented = false;
-
-// ─────────────────────────────────────
-// Помошни функции
-// ─────────────────────────────────────
+// ─────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────
 function getThreadId() {
   const params = new URLSearchParams(window.location.search);
   return params.get("id");
 }
 
-function escapeHtml(text) {
+function escapeHtml(text = "") {
   const div = document.createElement("div");
-  div.textContent = text ?? "";
+  div.textContent = text;
   return div.innerHTML;
 }
 
-// Форматирање на датум
 function formatDate(ts) {
   if (!ts || !ts.toDate) return "??";
   return ts.toDate().toLocaleString("mk-MK", {
     day: "2-digit",
     month: "short",
-    year: "numeric",
     hour: "2-digit",
     minute: "2-digit"
   });
 }
 
-// ─────────────────────────────────────
-// AUTH
-// ─────────────────────────────────────
-auth.onAuthStateChanged(async (user) => {
+// ─────────────────────────────────────────
+// Main auth flow
+// ─────────────────────────────────────────
+auth.onAuthStateChanged(async user => {
   if (!user || !user.uid.startsWith("steam:")) {
     location.href = "index.html";
     return;
@@ -57,398 +55,473 @@ auth.onAuthStateChanged(async (user) => {
     return;
   }
 
-  // Прочитај ја улогата
+  // Вчитај улога на корисник
   try {
     const userSnap = await db.collection("users").doc(user.uid).get();
-    const u = userSnap.data() || {};
-    currentUserRole = (u.role || "member").toLowerCase();
-
-    if (u.banned) {
-      alert("Ти си баниран од форумот.");
-      location.href = "main.html";
-      return;
+    if (userSnap.exists) {
+      const u = userSnap.data();
+      currentUserRole = (u.role || "member").toLowerCase();
     }
   } catch (e) {
-    console.warn("Грешка при читање на корисник:", e);
+    console.warn("Не можам да ја вчитам улогата:", e);
   }
 
-  // Вклучи real-time листенер за темата
-  subscribeThread(threadId);
-  // Вклучи real-time коментари
-  subscribeComments(threadId);
+  // Врзи UI handler-и
+  bindUiHandlers();
 
-  // Listener за копче „Објави“
+  // Вчитај тема + коментари
+  await loadThread(threadId);
+  listenCommentsRealtime(threadId);
+});
+
+// ─────────────────────────────────────────
+// Bind UI handlers
+// ─────────────────────────────────────────
+function bindUiHandlers() {
   const sendBtn = document.getElementById("sendComment");
+  const textarea = document.getElementById("commentInput");
+
   if (sendBtn) {
     sendBtn.addEventListener("click", postComment);
   }
-});
 
-// ─────────────────────────────────────
-// Real-time Thread Listener
-// ─────────────────────────────────────
-function subscribeThread(id) {
+  if (textarea) {
+    textarea.addEventListener("keydown", e => {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        postComment();
+      }
+    });
+  }
+
+  const delBtn = document.getElementById("deleteThread");
+  const lockBtn = document.getElementById("toggleLock");
+
+  if (delBtn) delBtn.addEventListener("click", deleteThread);
+  if (lockBtn) lockBtn.addEventListener("click", toggleLock);
+}
+
+// ─────────────────────────────────────────
+// Load thread data
+// ─────────────────────────────────────────
+async function loadThread(id) {
   const titleEl = document.getElementById("threadTitle");
-  const contentEl = document.getElementById("threadContent");
   const authorEl = document.getElementById("threadAuthor");
   const dateEl = document.getElementById("threadDate");
   const viewsEl = document.getElementById("threadViews");
-  const commentsMetaEl = document.getElementById("threadComments");
   const lockedBanner = document.getElementById("lockedBanner");
+  const contentEl = document.getElementById("threadContent");
+  const modPanel = document.getElementById("modPanel");
   const commentBox = document.getElementById("commentBox");
-  const commentInput = document.getElementById("commentInput");
 
-  if (threadUnsub) threadUnsub();
+  try {
+    const snap = await db.collection("threads").doc(id).get();
+    if (!snap.exists) {
+      if (titleEl) titleEl.textContent = "Темата не постои или е избришана.";
+      if (contentEl) contentEl.textContent = "";
+      if (commentBox) commentBox.style.display = "none";
+      return;
+    }
 
-  threadUnsub = db.collection("threads").doc(id).onSnapshot(
-    (doc) => {
-      if (!doc.exists) {
-        if (titleEl) titleEl.textContent = "Темата не постои или е избришана.";
-        if (contentEl) contentEl.textContent = "";
-        if (commentBox) commentBox.style.display = "none";
+    threadData = snap.data();
+
+    const title = threadData.title || "Без наслов";
+    const author = threadData.author || "Непознат";
+    const createdAt = threadData.createdAt;
+    const locked = threadData.locked === true;
+    const currentViews = threadData.views || 0;
+    const sticky = threadData.sticky === true;
+
+    if (titleEl) titleEl.textContent = title;
+
+    if (authorEl) {
+      authorEl.innerHTML = `
+        од <strong class="author-tag">${escapeHtml(author)}</strong>
+        ${sticky ? `<span class="meta-pill">📌 Sticky</span>` : ""}
+      `;
+    }
+
+    if (dateEl) dateEl.textContent = formatDate(createdAt);
+
+    if (viewsEl) {
+      viewsEl.textContent = `Прегледи: ${currentViews + 1}`;
+    }
+
+    if (contentEl) {
+      const body = threadData.body || threadData.content || "";
+      contentEl.innerHTML = escapeHtml(body).replace(/\n/g, "<br>");
+    }
+
+    if (locked && lockedBanner && commentBox) {
+      lockedBanner.style.display = "block";
+      const textarea = document.getElementById("commentInput");
+      const button = document.getElementById("sendComment");
+      if (textarea) {
+        textarea.disabled = true;
+        textarea.placeholder = "Оваа тема е заклучена 🔒";
+      }
+      if (button) button.disabled = true;
+    }
+
+    // View counter (+1)
+    db.collection("threads").doc(id)
+      .update({ views: firebase.firestore.FieldValue.increment(1) })
+      .catch(() => {});
+
+    // Мод панел
+    if (modPanel && (currentUserRole === "admin" || currentUserRole === "moderator")) {
+      modPanel.style.display = "flex";
+    }
+
+  } catch (e) {
+    console.error("Грешка при вчитување на темата:", e);
+  }
+}
+
+// ─────────────────────────────────────────
+// Real-time comments
+// ─────────────────────────────────────────
+function listenCommentsRealtime(id) {
+  const listEl = document.getElementById("commentsList");
+  const countMeta = document.getElementById("threadComments");
+
+  if (!listEl) return;
+
+  db.collection("threads").doc(id).collection("comments")
+    .orderBy("createdAt", "asc")
+    .onSnapshot(snap => {
+      if (snap.empty) {
+        listEl.innerHTML = "<i style='color:#94a3b8;'>Нема коментари. Биди првиот! 😊</i>";
+        if (countMeta) countMeta.textContent = "Коментари: 0";
+        // update thread doc counter
+        db.collection("threads").doc(id).update({ commentCount: 0 }).catch(() => {});
         return;
       }
 
-      threadData = doc.data();
+      listEl.innerHTML = "";
+      let count = 0;
 
-      // Наслов
-      if (titleEl) {
-        titleEl.textContent = escapeHtml(threadData.title || "Без наслов");
-      }
+      snap.forEach(doc => {
+        count++;
+        const c = doc.data();
+        const cid = doc.id;
 
-      // Содржина (content / body fallback)
-      const bodyText = threadData.content || threadData.body || "";
-      if (contentEl) {
-        contentEl.innerHTML = escapeHtml(bodyText).replace(/\n/g, "<br>");
-      }
+        const isOwn = c.authorId === currentUser.uid;
+        const isThreadAuthor = threadData && c.authorId === threadData.authorId;
+        const likedBy = Array.isArray(c.likedBy) ? c.likedBy : [];
+        const liked = likedBy.includes(currentUser.uid);
+        const likesCount = c.likesCount || likedBy.length || 0;
 
-      // Автор
-      if (authorEl) {
-        const authorName = escapeHtml(threadData.author || "Непознат автор");
-        const authorId = threadData.authorId || "";
-        if (authorId) {
-          authorEl.innerHTML = `од <a href="profile.html?id=${authorId}" style="color:#93c5fd;text-decoration:none;">${authorName}</a>`;
-        } else {
-          authorEl.textContent = authorName;
-        }
-      }
+        const letter = (c.author || "?")[0]?.toUpperCase() || "?";
+        const hue = (c.author?.charCodeAt(0) || 0) * 7 % 360;
 
-      // Датум
-      if (dateEl) {
-        dateEl.textContent = formatDate(threadData.createdAt);
-      }
+        const created = formatDate(c.createdAt);
+        const editedMark = c.edited ? " <span style='font-size:0.8rem;color:#9ca3af'>(уредено)</span>" : "";
 
-      // Views
-      const views = threadData.views || 0;
-      if (viewsEl) {
-        viewsEl.textContent = `👁 ${views} прегледи`;
-      }
+        // Подготовка на текст за quote (без HTML)
+        const plainText = (c.text || "").replace(/"/g, "&quot;").replace(/\n/g, "\\n");
 
-      // Comment count (ќе го ажурира и comments listener-от)
-      if (commentsMetaEl) {
-        const cc = threadData.commentCount || 0;
-        commentsMetaEl.textContent = `💬 ${cc} коментари`;
-      }
-
-      // Locked state
-      const locked = threadData.locked === true;
-      if (lockedBanner) lockedBanner.style.display = locked ? "block" : "none";
-      if (commentInput) {
-        commentInput.disabled = locked;
-        commentInput.placeholder = locked
-          ? "Оваа тема е заклучена 🔒"
-          : "Напиши коментар...";
-      }
-      const sendBtn = document.getElementById("sendComment");
-      if (sendBtn) sendBtn.disabled = locked;
-
-      // Мод панел (само за admin / moderator)
-      const modPanel = document.getElementById("modPanel");
-      if (modPanel) {
-        if (currentUserRole === "admin" || currentUserRole === "moderator") {
-          modPanel.style.display = "flex";
-        } else {
-          modPanel.style.display = "none";
-        }
-      }
-
-      // Views +1 (само првпат)
-      if (!viewsIncremented) {
-        viewsIncremented = true;
-        db.collection("threads")
-          .doc(id)
-          .update({
-            views: firebase.firestore.FieldValue.increment(1),
-          })
-          .catch(() => {});
-      }
-    },
-    (err) => {
-      console.error("Грешка при слушање на тема:", err);
-      if (titleEl) titleEl.textContent = "Грешка при вчитување на темата.";
-    }
-  );
-
-  // MOD Копчиња
-  const deleteBtn = document.getElementById("deleteThread");
-  if (deleteBtn) {
-    deleteBtn.onclick = handleDeleteThread;
-  }
-
-  const toggleLockBtn = document.getElementById("toggleLock");
-  if (toggleLockBtn) {
-    toggleLockBtn.onclick = handleToggleLock;
-  }
-}
-
-// ─────────────────────────────────────
-// Real-time Comments
-// ─────────────────────────────────────
-function subscribeComments(id) {
-  const list = document.getElementById("commentsList");
-  const commentsMetaEl = document.getElementById("threadComments");
-
-  if (!list) return;
-
-  if (commentsUnsub) commentsUnsub();
-
-  commentsUnsub = db
-    .collection("threads")
-    .doc(id)
-    .collection("comments")
-    .orderBy("createdAt", "asc")
-    .onSnapshot(
-      (snap) => {
-        if (snap.empty) {
-          list.innerHTML =
-            "<div style='color:#94a3b8;font-style:italic;padding:10px 0;'>Нема коментари. Биди првиот! 😊</div>";
-          if (commentsMetaEl) commentsMetaEl.textContent = "💬 0 коментари";
-          // Update thread doc count
-          db.collection("threads").doc(id).update({
-            commentCount: 0,
-          }).catch(() => {});
-          return;
-        }
-
-        list.innerHTML = "";
-        let count = 0;
-
-        snap.forEach((doc) => {
-          count++;
-          const c = doc.data();
-
-          const authorName = c.author || "Корисник";
-          const isOwn = c.authorId === currentUser?.uid;
-          const dateStr = c.createdAt
-            ? c.createdAt.toDate().toLocaleString("mk-MK", {
-                day: "2-digit",
-                month: "short",
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : "??";
-
-          const avatarBg = c.avatarUrl
-            ? `background-image:url(${c.avatarUrl});background-size:cover;background-position:center;`
-            : `background: hsl(${(authorName.charCodeAt(0) || 0) * 7 % 360},70%,55%);display:flex;align-items:center;justify-content:center;font-weight:bold;`;
-
-          const safeText = escapeHtml(c.text || "").replace(/\n/g, "<br>");
-
-          const canFlag = currentUser && currentUser.uid !== c.authorId;
-
-          const commentHtml = `
-            <div class="comment">
-              <div class="avatar" style="${avatarBg}">
-                ${
-                  c.avatarUrl
-                    ? ""
-                    : escapeHtml(authorName[0]?.toUpperCase() || "?")
-                }
+        const commentHtml = `
+          <div class="comment" id="comment-${cid}">
+            <div class="avatar" style="background:hsl(${hue},70%,45%)">
+              ${
+                c.avatarUrl
+                  ? `<img src="${c.avatarUrl}" alt="">`
+                  : `${letter}`
+              }
+            </div>
+            <div class="comment-body">
+              <div class="comment-user-line">
+                <span class="comment-user" style="color:${isOwn ? "#22c55e" : "#bfdbfe"}">
+                  ${escapeHtml(c.author || "Корисник")}
+                </span>
+                ${isThreadAuthor ? `<span class="comment-author-tag">Автор на темата</span>` : ""}
               </div>
-              <div class="comment-body">
-                <div class="comment-user">
-                  <span style="color:${isOwn ? "#22c55e" : "#bfdbfe"};">
-                    ${escapeHtml(authorName)}
-                  </span>
-                  <span class="comment-time"> • ${dateStr}</span>
-                </div>
-                <div class="comment-text">${safeText}</div>
-                <div class="comment-actions">
-                  <span onclick="quoteComment('${escapeHtml(
-                    authorName
-                  )}', '${escapeHtml(c.text || "").replace(/'/g, "\\'")}')">
-                    💬 Quote
-                  </span>
-                  ${
-                    canFlag
-                      ? `<span onclick="flagComment('${doc.id}')">🚩 Пријави</span>`
-                      : ""
-                  }
-                </div>
+              <div class="comment-time">${created}${editedMark}</div>
+              <div class="comment-text">
+                ${escapeHtml(c.text || "").replace(/\n/g, "<br>")}
+              </div>
+              <div class="comment-actions">
+                <span 
+                  class="like-btn ${liked ? "like-active" : ""}" 
+                  onclick="toggleLike('${cid}')">
+                  👍 <span class="like-count" id="like-count-${cid}">${likesCount}</span>
+                </span>
+                <span onclick="quoteComment('${cid}', '${escapeHtml(c.author || "")}', \`${plainText}\`)">
+                  💬 Quote
+                </span>
+                ${isOwn ? `
+                  <span onclick="editComment('${cid}')">✏️ Уреди</span>
+                  <span onclick="deleteComment('${cid}')">🗑 Избриши</span>
+                ` : `
+                  <span onclick="flagComment('${cid}')">🚩 Пријави</span>
+                `}
               </div>
             </div>
-          `;
+          </div>
+        `;
 
-          list.insertAdjacentHTML("beforeend", commentHtml);
-        });
+        listEl.insertAdjacentHTML("beforeend", commentHtml);
+      });
 
-        if (commentsMetaEl) {
-          commentsMetaEl.textContent = `💬 ${count} ${
-            count === 1 ? "коментар" : "коментари"
-          }`;
-        }
+      if (countMeta) countMeta.textContent = `Коментари: ${count}`;
 
-        // Сними го бројот на коментари во thread документот
-        db.collection("threads")
-          .doc(id)
-          .update({
-            commentCount: count,
-          })
-          .catch(() => {});
-      },
-      (err) => {
-        console.error("Грешка при коментари:", err);
-        list.innerHTML =
-          "<div style='color:#f97316;'>Грешка при вчитување на коментарите.</div>";
-      }
-    );
+      // update thread doc counter
+      db.collection("threads").doc(id).update({
+        commentCount: count
+      }).catch(() => {});
+    }, err => {
+      console.error("Грешка при коментари:", err);
+      listEl.innerHTML = "<p class='error'>Грешка при вчитување на коментарите.</p>";
+      if (countMeta) countMeta.textContent = "Коментари: —";
+    });
 }
 
-// ─────────────────────────────────────
-// Објавување коментар
-// ─────────────────────────────────────
+// ─────────────────────────────────────────
+// Post comment
+// ─────────────────────────────────────────
 async function postComment() {
-  if (!currentUser || !threadId || !threadData) return;
+  const textarea = document.getElementById("commentInput");
+  const btn = document.getElementById("sendComment");
 
-  if (threadData.locked) {
-    alert("Оваа тема е заклучена. Не можеш да коментираш.");
-    return;
-  }
+  if (!textarea || !currentUser || !threadId) return;
 
-  const input = document.getElementById("commentInput");
-  if (!input) return;
-
-  const text = input.value.trim();
+  const text = textarea.value.trim();
   if (!text) {
     alert("Внеси коментар.");
     return;
   }
 
+  if (threadData && threadData.locked) {
+    alert("Темата е заклучена. Нема нови коментари.");
+    return;
+  }
+
   try {
+    btn && (btn.disabled = true);
+
     const userSnap = await db.collection("users").doc(currentUser.uid).get();
-    const u = userSnap.data() || {};
+    const u = userSnap.exists ? userSnap.data() : {};
 
-    await db
-      .collection("threads")
-      .doc(threadId)
-      .collection("comments")
-      .add({
-        text,
-        author: u.username || "Корисник",
-        authorId: currentUser.uid,
-        avatarUrl: u.avatarUrl || "",
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      });
+    await db.collection("threads").doc(threadId).collection("comments").add({
+      text,
+      author: u.username || "Корисник",
+      authorId: currentUser.uid,
+      avatarUrl: u.avatarUrl || "",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      likedBy: [],
+      likesCount: 0,
+      edited: false
+    });
 
-    input.value = "";
+    // Инкрементирај глобален бројач на коментари (по желба)
+    db.collection("stats").doc("community").set({
+      comments: firebase.firestore.FieldValue.increment(1)
+    }, { merge: true }).catch(() => {});
+
+    textarea.value = "";
+
   } catch (e) {
     console.error("Грешка при објавување коментар:", e);
     alert("Грешка при објавување коментар.");
+  } finally {
+    btn && (btn.disabled = false);
   }
 }
 
-// ─────────────────────────────────────
-// Quote
-// ─────────────────────────────────────
-function quoteComment(author, text) {
-  const input = document.getElementById("commentInput");
-  if (!input) return;
-
-  const cleanText = text.replace(/\r/g, "");
-  const prefix = `> ${author} напиша:\n> ${cleanText.replace(
-    /\n/g,
-    "\n> "
-  )}\n\n`;
-
-  input.value = prefix + input.value;
-  input.focus();
-  input.scrollIntoView({ behavior: "smooth", block: "center" });
-}
-
-// ─────────────────────────────────────
-// Flag comment
-// ─────────────────────────────────────
-async function flagComment(commentId) {
+// ─────────────────────────────────────────
+// Like / Unlike comment
+// ─────────────────────────────────────────
+async function toggleLike(commentId) {
   if (!currentUser || !threadId) return;
 
-  if (!confirm("Сигурно сакаш да го пријавиш овој коментар?")) return;
+  const ref = db.collection("threads").doc(threadId).collection("comments").doc(commentId);
 
   try {
-    await db
-      .collection("threads")
-      .doc(threadId)
-      .collection("comments")
-      .doc(commentId)
-      .set(
-        {
-          flagged: true,
-        },
-        { merge: true }
-      );
+    await db.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) return;
+
+      const data = snap.data();
+      const likedBy = Array.isArray(data.likedBy) ? data.likedBy : [];
+      const hasLiked = likedBy.includes(currentUser.uid);
+
+      let newLikedBy, increment;
+      if (hasLiked) {
+        newLikedBy = likedBy.filter(id => id !== currentUser.uid);
+        increment = -1;
+      } else {
+        newLikedBy = [...likedBy, currentUser.uid];
+        increment = 1;
+      }
+
+      tx.update(ref, {
+        likedBy: newLikedBy,
+        likesCount: (data.likesCount || likedBy.length || 0) + increment
+      });
+    });
+  } catch (e) {
+    console.error("Грешка при like:", e);
+  }
+}
+
+// ─────────────────────────────────────────
+// Quote comment
+// ─────────────────────────────────────────
+function quoteComment(commentId, author, rawText) {
+  const textarea = document.getElementById("commentInput");
+  if (!textarea) return;
+
+  const text = (rawText || "").replace(/\\n/g, "\n");
+  const quoted = text.split("\n").map(l => `> ${l}`).join("\n");
+
+  const header = `> ${author} рече:\n`;
+  textarea.value = `${header}${quoted}\n\n` + textarea.value;
+  textarea.focus();
+  textarea.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+// ─────────────────────────────────────────
+// Edit own comment
+// ─────────────────────────────────────────
+async function editComment(commentId) {
+  if (!currentUser || !threadId) return;
+
+  const ref = db.collection("threads").doc(threadId).collection("comments").doc(commentId);
+
+  try {
+    const snap = await ref.get();
+    if (!snap.exists) return;
+
+    const data = snap.data();
+    if (data.authorId !== currentUser.uid) {
+      alert("Не можеш да уредуваш туѓ коментар.");
+      return;
+    }
+
+    const currentText = data.text || "";
+    const newText = prompt("Уреди го коментарот:", currentText);
+    if (newText === null) return;
+
+    const trimmed = newText.trim();
+    if (!trimmed) {
+      alert("Коментарот не може да биде празен.");
+      return;
+    }
+
+    await ref.update({
+      text: trimmed,
+      edited: true
+    });
+
+  } catch (e) {
+    console.error("Грешка при уредување коментар:", e);
+    alert("Грешка при уредување на коментар.");
+  }
+}
+
+// ─────────────────────────────────────────
+// Delete own comment
+// ─────────────────────────────────────────
+async function deleteComment(commentId) {
+  if (!currentUser || !threadId) return;
+
+  if (!confirm("Дали сигурно сакаш да го избришеш овој коментар?")) return;
+
+  const ref = db.collection("threads").doc(threadId).collection("comments").doc(commentId);
+
+  try {
+    const snap = await ref.get();
+    if (!snap.exists) return;
+
+    const data = snap.data();
+    if (data.authorId !== currentUser.uid && currentUserRole === "member") {
+      alert("Не можеш да бришеш туѓ коментар.");
+      return;
+    }
+
+    await ref.delete();
+
+    // Ако брише мод/админ, не го менуваме stats/community (keep it simple)
+
+  } catch (e) {
+    console.error("Грешка при бришење коментар:", e);
+    alert("Грешка при бришење на коментар.");
+  }
+}
+
+// ─────────────────────────────────────────
+// Flag comment (report)
+// ─────────────────────────────────────────
+async function flagComment(commentId) {
+  if (!currentUser || !threadId) return;
+  if (!confirm("Да го пријавам коментарот до модераторите?")) return;
+
+  try {
+    await db.collection("threads").doc(threadId).collection("comments").doc(commentId).set({
+      flagged: true
+    }, { merge: true });
 
     alert("Коментарот е пријавен. Модератор ќе го прегледа.");
   } catch (e) {
     console.error("Грешка при пријавување:", e);
-    alert("Грешка при пријавување на коментар.");
+    alert("Грешка при пријавување.");
   }
 }
 
-// ─────────────────────────────────────
-// MOD FUNKCIИ
-// ─────────────────────────────────────
-async function handleDeleteThread() {
-  if (!(currentUserRole === "admin" || currentUserRole === "moderator")) {
-    alert("Немаш привилегии за бришење тема.");
+// ─────────────────────────────────────────
+// Moderator actions
+// ─────────────────────────────────────────
+async function deleteThread() {
+  if (currentUserRole !== "admin" && currentUserRole !== "moderator") {
+    alert("Немаш дозвола да бришеш тема.");
     return;
   }
 
   if (!threadId) return;
-
-  if (
-    !confirm(
-      "Сигурно сакаш да ја избришеш оваа тема? Сите коментари ќе бидат изгубени."
-    )
-  )
-    return;
+  if (!confirm("Сигурно сакаш да ја избришеш целата тема и сите коментари?")) return;
 
   try {
-    // Напомена: Бришењето на сите коментари би требало да оди преку Cloud Function.
-    await db.collection("threads").doc(threadId).delete();
+    // Бришење на сите коментари (simple, без batch pagination)
+    const commentsSnap = await db.collection("threads").doc(threadId).collection("comments").get();
+    const batch = db.batch();
+
+    commentsSnap.forEach(doc => batch.delete(doc.ref));
+    batch.delete(db.collection("threads").doc(threadId));
+
+    await batch.commit();
+
     alert("Темата е избришана.");
     location.href = "forum.html";
+
   } catch (e) {
-    console.error("Грешка при бришење тема:", e);
+    console.error("Грешка при бришење на тема:", e);
     alert("Грешка при бришење тема.");
   }
 }
 
-async function handleToggleLock() {
-  if (!(currentUserRole === "admin" || currentUserRole === "moderator")) {
-    alert("Немаш привилегии за заклучување.");
+async function toggleLock() {
+  if (currentUserRole !== "admin" && currentUserRole !== "moderator") {
+    alert("Немаш дозвола да ја менуваш заклученоста.");
     return;
   }
+  if (!threadId) return;
 
-  if (!threadId || !threadData) return;
+  try {
+    const ref = db.collection("threads").doc(threadId);
+    const snap = await ref.get();
+    if (!snap.exists) return;
 
-  const newLocked = !threadData.locked;
+    const locked = !!snap.data().locked;
+    await ref.update({ locked: !locked });
 
-  try:
-    await db.collection("threads").doc(threadId).update({
-      locked: newLocked,
-    });
+    alert(!locked ? "Темата е заклучена." : "Темата е отклучена.");
+    // refresh view
+    loadThread(threadId);
+
   } catch (e) {
     console.error("Грешка при toggle lock:", e);
-    alert("Грешка при промена на состојба на темата.");
+    alert("Грешка при смена на статусот на темата.");
   }
 }
 
