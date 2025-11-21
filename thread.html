@@ -55,12 +55,21 @@
     }
 
     .meta {
-      font-size: 1rem;
+      font-size: 0.95rem;
       color: var(--muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
     }
 
     .meta span {
-      margin-right: 15px;
+      margin-right: 10px;
+    }
+
+    .meta .author-tag {
+      font-weight: 600;
+      color: #fbbf24;
     }
 
     /* CONTENT */
@@ -71,7 +80,8 @@
       border-radius: 14px;
       margin-top: 20px;
       border: 1px solid var(--border2);
-      font-size: 1.1rem;
+      font-size: 1.05rem;
+      white-space: pre-wrap;
     }
 
     /* LOCKED BADGE */
@@ -113,10 +123,27 @@
       background-position:center;
       flex-shrink: 0;
       border: 2px solid rgba(59,130,246,0.5);
+      overflow: hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:bold;
+    }
+
+    .avatar img {
+      width:100%;
+      height:100%;
+      object-fit:cover;
     }
 
     .comment-body {
       flex: 1;
+    }
+
+    .comment-user-line {
+      display:flex;
+      align-items:center;
+      gap:8px;
     }
 
     .comment-user {
@@ -125,31 +152,67 @@
       color: #bfdbfe;
     }
 
+    .comment-author-tag {
+      font-size:0.78rem;
+      padding:2px 8px;
+      border-radius:999px;
+      background:rgba(250,191,36,0.12);
+      color:#fbbf24;
+      border:1px solid rgba(250,191,36,0.35);
+      text-transform:uppercase;
+      letter-spacing:0.05em;
+    }
+
     .comment-time {
       font-size: 0.85rem;
       color: var(--muted);
+      margin-top:2px;
     }
 
     .comment-text {
-      margin-top: 6px;
-      font-size: 1.05rem;
+      margin-top: 8px;
+      font-size: 1.02rem;
       line-height: 1.6;
+    }
+
+    .comment-text blockquote {
+      border-left: 3px solid rgba(148,163,184,0.7);
+      padding-left: 10px;
+      margin: 4px 0 8px 0;
+      color: #9ca3af;
+      font-size:0.95rem;
     }
 
     .comment-actions {
       margin-top: 10px;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       display: flex;
       gap: 14px;
       color: var(--muted);
+      flex-wrap:wrap;
+      align-items:center;
     }
 
     .comment-actions span {
       cursor: pointer;
       transition: 0.15s;
+      display:flex;
+      align-items:center;
+      gap:4px;
     }
+
     .comment-actions span:hover {
       color: var(--blue);
+    }
+
+    .like-count {
+      font-size:0.9rem;
+      color:#e5e7eb;
+    }
+
+    .like-active {
+      color: var(--green) !important;
+      font-weight: 600;
     }
 
     /* ADD COMMENT */
@@ -163,8 +226,8 @@
 
     .add-comment textarea {
       width: 100%;
-      height: 100px;
-      resize: none;
+      height: 110px;
+      resize: vertical;
       padding: 12px;
       border-radius: 12px;
       border: 1px solid var(--border2);
@@ -172,6 +235,11 @@
       outline: none;
       background: #0f172a;
       color: var(--text);
+    }
+
+    .add-comment textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 1px rgba(59,130,246,0.6);
     }
 
     .add-comment button {
@@ -188,6 +256,15 @@
 
     .add-comment button:hover {
       background: #3b82f6;
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(37,99,235,0.4);
+    }
+
+    .add-comment button:disabled {
+      opacity:0.6;
+      cursor:not-allowed;
+      box-shadow:none;
+      transform:none;
     }
 
     /* MOD PANEL */
@@ -199,6 +276,7 @@
       border: 1px solid rgba(255,255,255,0.1);
       display: flex;
       gap: 12px;
+      flex-wrap:wrap;
     }
 
     .mod-panel button {
@@ -214,6 +292,22 @@
     .mod-panel button:nth-child(2) {
       background: var(--yellow);
       color: #000;
+    }
+
+    .meta-pill {
+      padding:2px 8px;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,0.5);
+      font-size:0.78rem;
+      text-transform:uppercase;
+      letter-spacing:0.06em;
+      color:#9ca3af;
+    }
+
+    @media (max-width: 640px) {
+      .thread-header { padding:20px; }
+      .thread-title { font-size:1.8rem; }
+      .container { margin:20px auto; }
     }
   </style>
 </head>
@@ -232,13 +326,13 @@
       <div class="meta">
         <span id="threadAuthor"></span>
         <span id="threadDate"></span>
-        <span id="threadViews"></span>
-        <span id="threadComments"></span>
+        <span id="threadViews" class="meta-pill"></span>
+        <span id="threadComments" class="meta-pill"></span>
       </div>
 
       <!-- LOCKED BANNER -->
       <div id="lockedBanner" class="locked-banner" style="display:none;">
-        🔒 Оваа тема е заклучена
+        🔒 Оваа тема е заклучена – нови коментари не се дозволени.
       </div>
 
       <!-- CONTENT -->
@@ -246,7 +340,7 @@
 
       <!-- MOD PANEL -->
       <div id="modPanel" class="mod-panel" style="display:none;">
-        <button id="deleteThread">Избриши тема</button>
+        <button id="deleteThread">🗑 Избриши тема</button>
         <button id="toggleLock">🔒 Заклучи / Отклучи</button>
       </div>
 
@@ -258,7 +352,7 @@
 
     <!-- ADD COMMENT -->
     <div class="add-comment" id="commentBox">
-      <textarea id="commentInput" placeholder="Напиши коментар..."></textarea>
+      <textarea id="commentInput" placeholder="Напиши коментар... (Ctrl+Enter за брзо објавување)"></textarea>
       <button id="sendComment">Објави</button>
     </div>
 
