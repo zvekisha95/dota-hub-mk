@@ -22,7 +22,7 @@
       "collectionGroup": "threads",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "sticky", "order": "ASCENDING" },
+        { "fieldPath": "sticky", "order": "DESCENDING" },
         { "fieldPath": "lastActivity", "order": "DESCENDING" },
         { "fieldPath": "__name__", "order": "ASCENDING" }
       ]
@@ -31,10 +31,12 @@
       "collectionGroup": "threads",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "lastActivity", "order": "DESCENDING" },
+        { "fieldPath": "flagged", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" },
         { "fieldPath": "__name__", "order": "ASCENDING" }
       ]
     }
   ],
   "fieldOverrides": []
 }
+
