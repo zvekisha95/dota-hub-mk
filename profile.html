@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="mk">
 <head>
@@ -144,6 +145,62 @@
       width:90px;
       border-radius:10px;
     }
+
+    .items-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.items-row-3 {
+  display: flex;
+  gap: 6px;
+}
+
+.neutral-slot {
+  margin-left: 10px;
+}
+
+.item-slot {
+  position: relative;
+}
+
+.item-img {
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+}
+
+.item-tip {
+  position: absolute;
+  bottom: -75px;
+  left: 0;
+  background: #1e293b;
+  padding: 6px;
+  border-radius: 6px;
+  display: none;
+  width: 150px;
+  text-align: center;
+  border: 1px solid #334155;
+  z-index: 99;
+}
+
+.item-slot:hover .item-tip {
+  display: block;
+}
+
+.item-tip-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 5px;
+}
+
+.item-tip-name {
+  font-size: 13px;
+  margin-top: 4px;
+  color: #cbd5e1;
+}
+
   </style>
 </head>
 
@@ -236,4 +293,3 @@
 
 </body>
 </html>
-
