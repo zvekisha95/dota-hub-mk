@@ -1,11 +1,11 @@
-// js/forum.js – SUPER UPGRADED 21.11.2025
+// js/forum.js – FINAL FIX 21.11.2025
+// Includes: sticky + lastActivity + infinite scroll + no index errors
 
 let currentUser = null;
 let userRole = "member";
 let lastDoc = null;
 const limit = 20;
 
-// Escape HTML
 function escapeHtml(t) {
   const div = document.createElement("div");
   div.textContent = t;
@@ -16,47 +16,37 @@ function escapeHtml(t) {
 // AUTH
 // ───────────────────────────────────────────────
 auth.onAuthStateChanged(async user => {
-
-  if (!user) {
-    location.href = "index.html";
-    return;
-  }
+  if (!user) return location.href = "index.html";
 
   currentUser = user;
 
-  // Профил линк
   const profileLink = document.getElementById("profileLink");
   if (profileLink) profileLink.href = `profile.html?id=${user.uid}`;
 
-  // User data
-  const doc = await db.collection("users").doc(user.uid).get();
-  const data = doc.exists ? doc.data() : {};
+  const snap = await db.collection("users").doc(user.uid).get();
+  const data = snap.exists ? snap.data() : {};
 
   if (data.banned) {
     alert("Ти си баниран од форумот.");
-    location.href = "main.html";
-    return;
+    return location.href = "main.html";
   }
 
   userRole = data.role || "member";
 
-  // Load threads
   loadThreads(true);
 
   // Infinite scroll
   window.addEventListener("scroll", () => {
-    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000) {
-      loadThreads(false);
-    }
+    const bottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 900;
+    if (bottom) loadThreads(false);
   });
 });
 
 
 // ───────────────────────────────────────────────
-// LOAD THREADS (with sticky + lock + views + commentsCount)
+// LOAD THREADS
 // ───────────────────────────────────────────────
 async function loadThreads(isFirstLoad = false) {
-
   const list = document.getElementById("threadList");
 
   if (isFirstLoad) {
@@ -65,6 +55,7 @@ async function loadThreads(isFirstLoad = false) {
 
   try {
     let query = db.collection("threads")
+      // ⭐ INDEX-SAFE ORDER (matches the composite index)
       .orderBy("sticky", "desc")
       .orderBy("lastActivity", "desc")
       .limit(limit);
@@ -76,9 +67,7 @@ async function loadThreads(isFirstLoad = false) {
     const snap = await query.get();
 
     if (snap.empty) {
-      if (isFirstLoad) {
-        list.innerHTML = `<div class="empty">Нема теми. Напиши прва! 🚀</div>`;
-      }
+      if (isFirstLoad) list.innerHTML = `<div class="empty">Нема теми. Напиши прва! 🚀</div>`;
       lastDoc = null;
       return;
     }
@@ -91,9 +80,9 @@ async function loadThreads(isFirstLoad = false) {
 
       const isSticky = t.sticky === true;
       const isLocked = t.locked === true;
+
       const commentsCount = t.commentCount || 0;
       const views = t.views || 0;
-
       const title = escapeHtml(t.title || "Без наслов");
       const author = escapeHtml(t.author || "Корисник");
       const authorId = t.authorId || "";
@@ -122,11 +111,10 @@ async function loadThreads(isFirstLoad = false) {
             </a>
 
             <span class="thread-user">
-              од <a href="profile.html?id=${authorId}" style="color:#94a3b8;text-decoration:none;">${author}</a>
+              од <a href="profile.html?id=${authorId}" class="alink">${author}</a>
             </span>
 
             <span class="thread-date">${date}</span>
-
             <span class="thread-comments">💬 ${commentsCount}</span>
             <span class="thread-views">👁️ ${views}</span>
 
@@ -142,7 +130,10 @@ async function loadThreads(isFirstLoad = false) {
 
   } catch (err) {
     console.error("Грешка при вчитување теми:", err);
-    list.innerHTML += `<div class="error">Грешка при вчитување.</div>`;
+    list.insertAdjacentHTML(
+      "beforeend",
+      `<div class="error">Грешка при вчитување на теми.</div>`
+    );
   }
 }
 
