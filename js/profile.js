@@ -17,7 +17,33 @@ function getProfileId() {
 }
 
 // =======================================================================
-// DOTA 2 HERO LIST (OpenDota format)
+// FIX: DOTA ITEM ICON HELPER (2025)
+// =======================================================================
+function getItemIcon(name) {
+  if (!name || name === "empty") {
+    return "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/items/emptyitemshadow_lg.png";
+  }
+
+  // Поправки за предмети со различни CDN имиња
+  const alias = {
+    "dust": "dust_of_appearance",
+    "tpscroll": "tp_scroll",
+    "magic_stick": "magic_stick",
+    "travel_boots": "travel_boots",
+    "travel_boots_2": "travel_boots_2",
+    "ward_sentry": "ward_sentry",
+    "ward_observer": "ward_observer",
+    "power_treads": "power_treads",
+    "phase_boots": "phase_boots",
+  };
+
+  const finalName = alias[name] || name;
+
+  return `https://cdn.cloudflare.steamstatic.com/apps/dota2/images/items/${finalName}_lg.png`;
+}
+
+// =======================================================================
+// HERO LIST (OpenDota format)
 // =======================================================================
 const heroNames = {
   1:"antimage",2:"axe",3:"bane",4:"bloodseeker",5:"crystal_maiden",6:"drow_ranger",
@@ -87,14 +113,14 @@ const itemNames = {
   148:"necronomicon_3",149:"recipe_diffusal_blade_2",150:"diffusal_blade_2",
   151:"recipe_travel_boots_2",152:"travel_boots_2",
 
-  // NEW NEUTRAL ITEMS
+  // NEUTRAL ITEMS
   300:"trusty_shovel",301:"arcane_ring",302:"broom_handle",303:"faded_broach",304:"paladin_sword",
   305:"mango_tree",306:"keen_optic",307:"royal_jelly",308:"pupils_gift",309:"tome_of_aghanim",
   310:"ironwood_tree",311:"mysterious_hat",312:"possessed_mask",313:"misericorde",314:"seer_stone"
 };
 
 // =======================================================================
-// CACHING CONFIG (localStorage)
+// CACHING CONFIG
 // =======================================================================
 const DOTA_CACHE_TTL_MS = 10 * 60 * 1000;
 
@@ -106,7 +132,7 @@ function loadFromCache(pid) {
     const raw = localStorage.getItem(getDotaCacheKey(pid));
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (!parsed || !parsed.timestamp || !parsed.data) return null;
+    if (!parsed.timestamp || !parsed.data) return null;
     if (Date.now() - parsed.timestamp > DOTA_CACHE_TTL_MS) return null;
     return parsed.data;
   } catch {
@@ -255,7 +281,7 @@ function renderDotaProfile(data, container, topHeroesEl, recentEl) {
       </div>`;
   }).join("");
 
-  // ========================= RECENT MATCHES + ITEMS =========================
+  // ========================= RECENT MATCHES + FIXED ITEMS =========================
   recentEl.innerHTML = recent.slice(0,10).map(m=>{
     const heroKey = heroNames[m.hero_id] || "antimage";
     const heroImg = `https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/${heroKey}.png`;
@@ -279,7 +305,7 @@ function renderDotaProfile(data, container, topHeroesEl, recentEl) {
         <div class="items-row">
           ${itemSlots.map(id=>{
             const name=itemNames[id]||"empty";
-            const icon=`https://cdn.cloudflare.steamstatic.com/apps/dota2/images/items/${name}.png`;
+            const icon=getItemIcon(name);
 
             return `
               <div class="item-slot">
@@ -299,7 +325,7 @@ function renderDotaProfile(data, container, topHeroesEl, recentEl) {
 }
 
 // =======================================================================
-// LOAD USER THREADS
+// USER THREADS + COMMENTS
 // =======================================================================
 async function loadUserThreads(uid){
   const div=document.getElementById("userThreads");
@@ -320,9 +346,6 @@ async function loadUserThreads(uid){
   }).join("");
 }
 
-// =======================================================================
-// LOAD USER COMMENTS
-// =======================================================================
 async function loadUserComments(uid){
   const div=document.getElementById("userComments");
   const snap=await db.collectionGroup("comments")
@@ -343,7 +366,7 @@ async function loadUserComments(uid){
 }
 
 // =======================================================================
-// RANK NAME
+// RANK
 // =======================================================================
 function rankName(tier){
   const m={0:"Uncalibrated",11:"Herald",22:"Guardian",33:"Crusader",44:"Archon",
