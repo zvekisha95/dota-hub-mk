@@ -1,5 +1,5 @@
 // =======================================================
-// profile.js – PREMIUM EDITION (Top Heroes + Peak MMR)
+// profile.js – OPTIMIZED EDITION (Hero stats + Recent + Caching)
 // =======================================================
 
 let currentUser = null;
@@ -47,6 +47,47 @@ const heroNames = {
 };
 
 // =======================================================
+// CACHING CONFIG (localStorage)
+// =======================================================
+const DOTA_CACHE_TTL_MS = 10 * 60 * 1000; // 10 минути
+
+function getDotaCacheKey(pid) {
+  return "zvek_dota_profile_" + pid;
+}
+
+function loadFromCache(pid) {
+  try {
+    const raw = localStorage.getItem(getDotaCacheKey(pid));
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    if (!parsed || !parsed.timestamp || !parsed.data) return null;
+
+    const age = Date.now() - parsed.timestamp;
+    if (age > DOTA_CACHE_TTL_MS) return null; // истечен кеш
+
+    return parsed.data;
+  } catch (e) {
+    console.warn("Dota cache parse error:", e);
+    return null;
+  }
+}
+
+function saveToCache(pid, data) {
+  try {
+    localStorage.setItem(
+      getDotaCacheKey(pid),
+      JSON.stringify({
+        timestamp: Date.now(),
+        data
+      })
+    );
+  } catch (e) {
+    console.warn("Dota cache save error:", e);
+  }
+}
+
+// =======================================================
 // AUTH + LOAD PROFILE
 // =======================================================
 auth.onAuthStateChanged(async user => {
@@ -80,43 +121,94 @@ async function loadUserData(uid) {
     a.style.backgroundImage = `url(${u.avatarUrl})`;
   }
 
-  document.getElementById("p_online").textContent = u.online ? "Онлајн 🟢" : "Офлајн";
+  document.getElementById("p_online").textContent =
+    u.online ? "Онлајн 🟢" : "Офлајн";
   document.getElementById("p_created").textContent =
     u.createdAt ? u.createdAt.toDate().toLocaleDateString("mk-MK") : "—";
 }
 
 // =======================================================
-// LOAD DOTA PROFILE
+// LOAD DOTA PROFILE (WITH CACHING)
 // =======================================================
 async function loadDotaData(uid) {
   const container = document.getElementById("dotaProfile");
-  container.innerHTML = "Вчитувам Dota податоци...";
+  const topHeroesEl = document.getElementById("topHeroes");
+  const recentEl = document.getElementById("recentMatches");
 
-  const userDoc = await db.collection("users").doc(uid).get();
-  const d = userDoc.data();
-  if (!d) return;
+  if (container) container.innerHTML = "Вчитувам Dota податоци...";
+  if (topHeroesEl) topHeroesEl.innerHTML = "";
+  if (recentEl) recentEl.innerHTML = "<div class='loading'>Вчитувам.</div>";
 
-  let pid = d.opendotaId || d.steamId;
-  if (!pid) {
-    container.innerHTML = "<p style='color:#94a3b8;text-align:center;'>Нема Dota ID.</p>";
-    return;
+  try {
+    const userDoc = await db.collection("users").doc(uid).get();
+    const d = userDoc.data();
+    if (!d) {
+      if (container) {
+        container.innerHTML = "<p style='color:#94a3b8;text-align:center;'>Нема Dota ID.</p>";
+      }
+      return;
+    }
+
+    let pid = d.opendotaId || d.steamId;
+    if (!pid) {
+      if (container) {
+        container.innerHTML = "<p style='color:#94a3b8;text-align:center;'>Нема Dota ID.</p>";
+      }
+      return;
+    }
+
+    // Convert steam64 → dota32 ако е потребно
+    if (pid.toString().length > 10) {
+      pid = String(BigInt(pid) - BigInt("76561197960265728"));
+    }
+
+    // 1) Пробај кеш
+    const cached = loadFromCache(pid);
+    if (cached) {
+      console.log("Dota profile – користам кеш за", pid);
+      renderDotaProfile(cached, container, topHeroesEl, recentEl);
+      return;
+    }
+
+    // 2) Ако нема кеш → API повици
+    console.log("Dota profile – повикувам OpenDota за", pid);
+
+    const [player, wl, recent, heroes] = await Promise.all([
+      fetch(`https://api.opendota.com/api/players/${pid}`).then(r => r.json()),
+      fetch(`https://api.opendota.com/api/players/${pid}/wl`).then(r => r.json()),
+      fetch(`https://api.opendota.com/api/players/${pid}/recentMatches`).then(r => r.json()),
+      fetch(`https://api.opendota.com/api/players/${pid}/heroes`).then(r => r.json())
+    ]);
+
+    const data = { player, wl, recent, heroes };
+
+    // сними во кеш
+    saveToCache(pid, data);
+
+    // рендер
+    renderDotaProfile(data, container, topHeroesEl, recentEl);
+
+  } catch (err) {
+    console.error("Грешка при вчитување на Dota податоци:", err);
+    if (container) {
+      container.innerHTML = "<p style='color:#ef4444;text-align:center;'>Грешка при вчитување на Dota податоци.</p>";
+    }
+    if (recentEl) {
+      recentEl.innerHTML = "<p style='color:#ef4444;text-align:center;'>Нема податоци.</p>";
+    }
   }
+}
 
-  // Convert steam64 → dota32
-  if (pid.toString().length > 10) {
-    pid = String(BigInt(pid) - BigInt("76561197960265728"));
-  }
+// =======================================================
+// RENDER DOTA PROFILE (player + rank + heroes + matches)
+// =======================================================
+function renderDotaProfile(data, container, topHeroesEl, recentEl) {
+  const { player, wl, recent, heroes } = data;
 
-  // Fetch 3 API calls
-  const [player, wl, recent, heroes] = await Promise.all([
-    fetch(`https://api.opendota.com/api/players/${pid}`).then(r => r.json()),
-    fetch(`https://api.opendota.com/api/players/${pid}/wl`).then(r => r.json()),
-    fetch(`https://api.opendota.com/api/players/${pid}/recentMatches`).then(r => r.json()),
-    fetch(`https://api.opendota.com/api/players/${pid}/heroes`).then(r => r.json())
-  ]);
-
-  if (!player.profile) {
-    container.innerHTML = "<p style='color:#94a3b8;text-align:center;'>Приватен профил.</p>";
+  if (!player || !player.profile) {
+    if (container) {
+      container.innerHTML = "<p style='color:#94a3b8;text-align:center;'>Приватен или недостапен профил.</p>";
+    }
     return;
   }
 
@@ -126,87 +218,95 @@ async function loadDotaData(uid) {
     ? `https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/badges/${tier}_badge.png`
     : "";
 
-  document.getElementById("rankImage").src = rankImg;
-  document.getElementById("rankName").textContent = rankName(tier);
+  const rankImageEl = document.getElementById("rankImage");
+  const rankNameEl = document.getElementById("rankName");
+  const mmrEl = document.getElementById("p_mmr");
+  const winrateEl = document.getElementById("p_winrate");
+
+  if (rankImageEl) rankImageEl.src = rankImg;
+  if (rankNameEl) rankNameEl.textContent = rankName(tier);
 
   // MMR
-  document.getElementById("p_mmr").textContent =
-    (player.solo_competitive_rank || player.competitive_rank) || "—";
+  if (mmrEl) {
+    mmrEl.textContent =
+      (player.solo_competitive_rank || player.competitive_rank) || "—";
+  }
 
   // Winrate
-  const wr = wl.win + wl.lose > 0 ? (wl.win / (wl.win + wl.lose)) * 100 : 0;
-  document.getElementById("p_winrate").textContent = `${wr.toFixed(1)}%`;
+  if (wl && winrateEl) {
+    const total = (wl.win || 0) + (wl.lose || 0);
+    const wr = total > 0 ? (wl.win / total) * 100 : 0;
+    winrateEl.textContent = `${wr.toFixed(1)}% winrate`;
+  }
 
-  // Fill main profile top block
-  container.innerHTML = `
-    <div style="text-align:center;margin-bottom:30px;">
-      <img src="${player.profile.avatarfull}" style="width:130px;height:130px;border-radius:50%;border:5px solid #3b82f6;">
-      <h2 style="margin:16px 0;color:#bfdbfe;">${escapeHtml(player.profile.personaname)}</h2>
-      <a href="${player.profile.profileurl}" target="_blank" style="color:#60a5fa;font-size:1.1rem;">Steam профил ↗</a>
-    </div>
-  `;
+  // Main block (avatar + name + Steam профил)
+  if (container) {
+    container.innerHTML = `
+      <div style="text-align:center;margin-bottom:30px;">
+        <img src="${player.profile.avatarfull}" style="width:130px;height:130px;border-radius:50%;border:5px solid #3b82f6;">
+        <h2 style="margin:16px 0;color:#bfdbfe;">${escapeHtml(player.profile.personaname)}</h2>
+        <a href="${player.profile.profileurl}" target="_blank" style="color:#60a5fa;font-size:1.1rem;">Steam профил ↗</a>
+      </div>
+    `;
+  }
 
-  // ===================================================
-  // TOP HEROES (NEW)
-  // ===================================================
-  const topContainer = document.createElement("div");
-  topContainer.innerHTML = `
-    <h3 class="section-title">📌 Топ 5 Херои</h3>
-    <div id="topHeroes" style="display:grid;gap:20px;"></div>
-  `;
-  container.appendChild(topContainer);
+  // ================= TOP HEROES (populate #topHeroes) =================
+  if (topHeroesEl && Array.isArray(heroes)) {
+    const best = heroes
+      .filter(h => h.games > 5)
+      .sort((a, b) => (b.win / b.games) - (a.win / a.games))
+      .slice(0, 5);
 
-  const best = heroes
-    .filter(h => h.games > 5)
-    .sort((a, b) => b.win / b.games - a.win / a.games)
-    .slice(0, 5);
+    if (best.length === 0) {
+      topHeroesEl.innerHTML =
+        "<p style='color:#94a3b8;'>Нема доволно одиграни игри за статистика.</p>";
+    } else {
+      topHeroesEl.innerHTML = best.map(h => {
+        const winrate = (h.win / h.games) * 100;
+        const heroKey = heroNames[h.hero_id] || "antimage";
+        const img = `https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/${heroKey}.png`;
 
-  document.getElementById("topHeroes").innerHTML =
-    best.map(h => {
-      const winrate = (h.win / h.games) * 100;
-      const heroKey = heroNames[h.hero_id] || "antimage";
+        return `
+          <div style="background:rgba(30,41,59,0.7);padding:18px;border-radius:16px;display:flex;align-items:center;gap:18px;">
+            <img src="${img}" style="width:90px;border-radius:10px;">
+            <div>
+              <div style="font-size:1.4rem;color:#bfdbfe;font-weight:bold;">
+                ${heroKey.replace(/_/g," ").toUpperCase()}
+              </div>
+              <div style="color:#22c55e;font-weight:bold;">${winrate.toFixed(1)}% WR</div>
+              <div style="color:#94a3b8;">${h.games} игри</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+  }
+
+  // ================= Recent Matches (populate #recentMatches) =================
+  if (recentEl && Array.isArray(recent)) {
+    recentEl.innerHTML = recent.slice(0, 10).map(m => {
+      const heroKey = heroNames[m.hero_id] || "antimage";
       const img = `https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/${heroKey}.png`;
 
+      const win = m.radiant_win === (m.player_slot < 128);
+      const color = win ? "#22c55e" : "#ef4444";
+
       return `
-        <div style="background:rgba(30,41,59,0.7);padding:18px;border-radius:16px;display:flex;align-items:center;gap:18px;">
-          <img src="${img}" style="width:90px;border-radius:10px;">
-          <div>
-            <div style="font-size:1.4rem;color:#bfdbfe;font-weight:bold;">
-              ${heroKey.replace(/_/g," ").toUpperCase()}
-            </div>
-            <div style="color:#22c55e;font-weight:bold;">${winrate.toFixed(1)}% WR</div>
-            <div style="color:#94a3b8;">${h.games} игри</div>
+        <div class="match ${win ? "win" : "loss"}">
+          <img src="${img}" class="match-hero">
+          <div style="flex:1;">
+            <strong style="font-size:1.2rem;color:${color};">
+              ${win ? "ПОБЕДА" : "ПОРАЗ"}
+            </strong><br>
+            K/D/A: <b>${m.kills}/${m.deaths}/${m.assists}</b>
           </div>
+          <a href="https://www.dotabuff.com/matches/${m.match_id}"
+             target="_blank"
+             style="color:#60a5fa;font-weight:bold;">Dotabuff ↗</a>
         </div>
       `;
     }).join("");
-
-  // ===================================================
-  // Recent Matches
-  // ===================================================
-  const recentEl = document.getElementById("recentMatches");
-  recentEl.innerHTML = recent.slice(0, 10).map(m => {
-    const heroKey = heroNames[m.hero_id] || "antimage";
-    const img = `https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/${heroKey}.png`;
-
-    const win = m.radiant_win === (m.player_slot < 128);
-    const color = win ? "#22c55e" : "#ef4444";
-
-    return `
-      <div class="match ${win ? "win" : "loss"}">
-        <img src="${img}" class="match-hero">
-        <div style="flex:1;">
-          <strong style="font-size:1.2rem;color:${color};">
-            ${win ? "ПОБЕДА" : "ПОРАЗ"}
-          </strong><br>
-          K/D/A: <b>${m.kills}/${m.deaths}/${m.assists}</b>
-        </div>
-        <a href="https://www.dotabuff.com/matches/${m.match_id}"
-           target="_blank"
-           style="color:#60a5fa;font-weight:bold;">Dotabuff ↗</a>
-      </div>
-    `;
-  }).join("");
+  }
 }
 
 // =======================================================
@@ -220,11 +320,18 @@ async function loadUserThreads(uid) {
     .limit(5)
     .get();
 
-  if (snap.empty) return div.innerHTML = "Нема теми.";
+  if (snap.empty) {
+    div.innerHTML = "Нема теми.";
+    return;
+  }
 
   div.innerHTML = snap.docs.map(doc => {
     const t = doc.data();
-    return `<div style="margin:8px 0;"><a href="thread.html?id=${doc.id}" style="color:#60a5fa;font-size:1.1rem;">${escapeHtml(t.title)}</a></div>`;
+    return `<div style="margin:8px 0;">
+      <a href="thread.html?id=${doc.id}" style="color:#60a5fa;font-size:1.1rem;">
+        ${escapeHtml(t.title || "Без наслов")}
+      </a>
+    </div>`;
   }).join("");
 }
 
@@ -236,13 +343,17 @@ async function loadUserComments(uid) {
     .limit(5)
     .get();
 
-  if (snap.empty) return div.innerHTML = "Нема коментари.";
+  if (snap.empty) {
+    div.innerHTML = "Нема коментари.";
+    return;
+  }
 
   div.innerHTML = snap.docs.map(d => {
     const c = d.data();
+    const text = c.text || c.content || "";
     return `
       <div style="margin:12px 0;background:rgba(30,41,59,0.7);padding:12px;border-radius:10px;">
-        <div>${escapeHtml(c.content)}</div>
+        <div>${escapeHtml(text)}</div>
       </div>`;
   }).join("");
 }
@@ -257,3 +368,4 @@ function rankName(tier) {
   };
   return map[Math.floor(tier / 10) * 10] || "Uncalibrated";
 }
+
