@@ -281,47 +281,65 @@ function renderDotaProfile(data, container, topHeroesEl, recentEl) {
       </div>`;
   }).join("");
 
-  // ========================= RECENT MATCHES + FIXED ITEMS =========================
-  recentEl.innerHTML = recent.slice(0,10).map(m=>{
-    const heroKey = heroNames[m.hero_id] || "antimage";
-    const heroImg = `https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/${heroKey}.png`;
-    const win = m.radiant_win === (m.player_slot < 128);
-    const color = win ? "#22c55e" : "#ef4444";
+  /// ========================= RECENT MATCHES (6 ITEMS + NEUTRAL) =========================
+recentEl.innerHTML = recent.slice(0, 10).map(m => {
+  const heroKey = heroNames[m.hero_id] || "antimage";
+  const heroImg = `https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/${heroKey}.png`;
+  const win = m.radiant_win === (m.player_slot < 128);
+  const color = win ? "#22c55e" : "#ef4444";
 
-    const itemSlots = [
-      m.item_0, m.item_1, m.item_2,
-      m.item_3, m.item_4, m.item_5,
-      m.neutral_item
-    ];
+  // 6 основни + 1 neutral
+  const itemsTop = [m.item_0, m.item_1, m.item_2];
+  const itemsBottom = [m.item_3, m.item_4, m.item_5];
+  const neutralItem = m.neutral_item;
+
+  function renderItem(id) {
+    const name = itemNames[id] || "empty";
+    const icon = getItemIcon(name);
 
     return `
-      <div class="match ${win?"win":"loss"}">
-        <img src="${heroImg}" class="match-hero">
-        <div class="match-info">
-          <strong style="color:${color};">${win?"ПОБЕДА":"ПОРАЗ"}</strong><br>
-          <span>K/D/A: <b>${m.kills}/${m.deaths}/${m.assists}</b></span>
+      <div class="item-slot">
+        <img src="${icon}" class="item-img">
+        <div class="item-tip">
+          <img src="${icon}" class="item-tip-img">
+          <div class="item-tip-name">${name.replace(/_/g, " ")}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="match ${win ? "win" : "loss"}">
+
+      <img src="${heroImg}" class="match-hero">
+
+      <div class="match-info">
+        <strong style="color:${color};">${win ? "ПОБЕДА" : "ПОРАЗ"}</strong><br>
+        <span>K/D/A: <b>${m.kills}/${m.deaths}/${m.assists}</b></span>
+      </div>
+
+      <div class="items-wrapper">
+
+        <div class="items-row-3">
+          ${itemsTop.map(renderItem).join("")}
         </div>
 
-        <div class="items-row">
-          ${itemSlots.map(id=>{
-            const name=itemNames[id]||"empty";
-            const icon=getItemIcon(name);
-
-            return `
-              <div class="item-slot">
-                <img src="${icon}" class="item-img">
-                <div class="item-tip">
-                  <img src="${icon}" class="item-tip-img">
-                  <div class="item-tip-name">${name.replace(/_/g," ")}</div>
-                </div>
-              </div>`;
-          }).join("")}
+        <div class="items-row-3">
+          ${itemsBottom.map(renderItem).join("")}
         </div>
 
-        <a href="https://www.dotabuff.com/matches/${m.match_id}"
-           target="_blank" class="match-link">Dotabuff ↗</a>
-      </div>`;
-  }).join("");
+        <div class="neutral-slot">
+          ${renderItem(neutralItem)}
+        </div>
+
+      </div>
+
+      <a href="https://www.dotabuff.com/matches/${m.match_id}"
+         target="_blank" class="match-link">Dotabuff ↗</a>
+    </div>
+  `;
+}).join("");
+
 }
 
 // =======================================================================
@@ -373,3 +391,4 @@ function rankName(tier){
            55:"Legend",66:"Ancient",77:"Divine",80:"Immortal"};
   return m[Math.floor(tier/10)*10] || "Uncalibrated";
 }
+
