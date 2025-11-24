@@ -1,5 +1,6 @@
-// js/forum.js – FINAL FIX 21.11.2025
-// Includes: sticky + lastActivity + infinite scroll + no index errors
+
+// js/forum.js – PREMIUM FINAL FIX 2025
+// Fully compatible with premium thread.js + Firestore rules
 
 let currentUser = null;
 let userRole = "member";
@@ -16,7 +17,9 @@ function escapeHtml(t) {
 // AUTH
 // ───────────────────────────────────────────────
 auth.onAuthStateChanged(async user => {
-  if (!user) return location.href = "index.html";
+  if (!user || !user.uid.startsWith("steam:")) {
+    return location.href = "index.html";
+  }
 
   currentUser = user;
 
@@ -27,35 +30,38 @@ auth.onAuthStateChanged(async user => {
   const data = snap.exists ? snap.data() : {};
 
   if (data.banned) {
-    alert("Ти си баниран од форумот.");
+    alert("⛔ Ти си баниран од форумот.");
     return location.href = "main.html";
   }
 
   userRole = data.role || "member";
 
+  // Load threads + infinite scroll
   loadThreads(true);
 
-  // Infinite scroll
   window.addEventListener("scroll", () => {
-    const bottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 900;
-    if (bottom) loadThreads(false);
+    const bottomReached = window.innerHeight + window.scrollY >= document.body.offsetHeight - 900;
+    if (bottomReached) loadThreads(false);
   });
 });
 
 
 // ───────────────────────────────────────────────
-// LOAD THREADS
+// LOAD THREADS (with sticky, lastActivity, infinite scroll)
 // ───────────────────────────────────────────────
 async function loadThreads(isFirstLoad = false) {
   const list = document.getElementById("threadList");
 
+  if (!list) return;
+
   if (isFirstLoad) {
     list.innerHTML = `<div class="loading">Вчитувам теми...</div>`;
+    lastDoc = null;
   }
 
   try {
+    // INDEX-SAFE ORDER
     let query = db.collection("threads")
-      // ⭐ INDEX-SAFE ORDER (matches the composite index)
       .orderBy("sticky", "desc")
       .orderBy("lastActivity", "desc")
       .limit(limit);
@@ -67,7 +73,9 @@ async function loadThreads(isFirstLoad = false) {
     const snap = await query.get();
 
     if (snap.empty) {
-      if (isFirstLoad) list.innerHTML = `<div class="empty">Нема теми. Напиши прва! 🚀</div>`;
+      if (isFirstLoad) {
+        list.innerHTML = `<div class="empty">Нема теми. Напиши прва! 🚀</div>`;
+      }
       lastDoc = null;
       return;
     }
@@ -136,4 +144,3 @@ async function loadThreads(isFirstLoad = false) {
     );
   }
 }
-
