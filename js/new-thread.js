@@ -1,9 +1,11 @@
-// js/new-thread.js – PREMIUM FIXED 20.11.2025
-// Објавување нова тема – целосно усогласено со премиум thread.js
+// js/new-thread.js – PREMIUM FIXED FINAL 2025
+// Објавување нова тема – целосно усогласено со premium thread.js + anti-spam
 
 let currentUser = null;
 
-// AUTH + БАН ПРОВЕРКА
+// ==========================================================
+// AUTH + BAN CHECK
+// ==========================================================
 auth.onAuthStateChanged(async user => {
   if (!user || !user.uid.startsWith("steam:")) {
     location.href = "index.html";
@@ -23,7 +25,7 @@ auth.onAuthStateChanged(async user => {
 });
 
 // ==========================================================
-// ОБЈАВУВАЊЕ НОВА ТЕМА
+// CREATE NEW THREAD
 // ==========================================================
 async function postThread() {
   const titleEl = document.getElementById("threadTitle");
@@ -47,6 +49,12 @@ async function postThread() {
     return;
   }
 
+  if (title.length > 150) {
+    statusEl.textContent = "Насловот е премногу долг (макс 150 карактери)!";
+    statusEl.classList.add("error");
+    return;
+  }
+
   if (!body || body.length < 10) {
     statusEl.textContent = "Содржината мора да има барем 10 карактери!";
     statusEl.classList.add("error");
@@ -54,10 +62,13 @@ async function postThread() {
     return;
   }
 
-  if (title.length > 120) {
-    statusEl.textContent = "Насловот е премногу долг (макс 120 карактери)!";
-    statusEl.classList.add("error");
-    return;
+  // ==========================================================
+  // ANTI-SPAM CHECK (ако anti-spam.js е вклучен)
+  // ==========================================================
+  if (window.SpamGuard && typeof window.SpamGuard.checkThread === "function") {
+    if (!window.SpamGuard.checkThread()) {
+      return;
+    }
   }
 
   // DISABLE BUTTON
@@ -66,10 +77,10 @@ async function postThread() {
 
   try {
     const userDoc = await db.collection("users").doc(currentUser.uid).get();
-    const userData = userDoc.data();
+    const userData = userDoc.data() || {};
 
     // ==========================================================
-    // ЗАПИШУВАЊЕ НА ТЕМА (US-KOREKTNO, PREMIUM FORMAT)
+    // FIRESTORE THREAD DOCUMENT – PREMIUM FORMAT
     // ==========================================================
     await db.collection("threads").add({
       title,
@@ -80,11 +91,11 @@ async function postThread() {
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
 
       // PREMIUM систем полиња:
-      locked: false,
-      sticky: false,
-      flagged: false,
-      commentCount: 0,
-      views: 0,   // ⭐ ОВА Е КЛУЧНО ЗА НОВИОТ thread.js !!!
+      locked: false,               // 🔒
+      sticky: false,               // 📌
+      flagged: false,              // 🚩 за модератори
+      views: 0,                    // 👁 view counter
+      commentCount: 0,             // 💬 број коментари
       lastActivity: firebase.firestore.FieldValue.serverTimestamp()
     });
 
@@ -104,7 +115,9 @@ async function postThread() {
   }
 }
 
-// SUBMIT
+// ==========================================================
+// SUBMIT HANDLER
+// ==========================================================
 document.getElementById("newThreadForm")?.addEventListener("submit", e => {
   e.preventDefault();
   postThread();
