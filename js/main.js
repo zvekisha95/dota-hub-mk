@@ -1,6 +1,9 @@
 // =======================================================
-// 1) Чекај DOM + Firebase да се вчита
+// main.js – PREMIUM FINAL 2025
+// Полно фиксиран, стабилен, компатибилен со сите твој системи
 // =======================================================
+
+// Чекај DOM + Firebase да се вчита
 document.addEventListener("DOMContentLoaded", async () => {
 
   console.log("main.js стартува...");
@@ -18,7 +21,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const db = firebase.firestore();
 
   // =======================================================
-  // AUTO INIT FORUM – креирање `stats` + `threads`
+  // AUTO INIT FORUM – креирање stats + прва тема
   // =======================================================
   async function initForum() {
     try {
@@ -35,7 +38,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log("✔ initForum: community stats created");
       }
 
-      // Проверка дали threads колекцијата има барем една тема
+      // Проверка дали threads има барем една тема
       const threadSnap = await db.collection("threads").limit(1).get();
 
       if (threadSnap.empty) {
@@ -44,13 +47,17 @@ document.addEventListener("DOMContentLoaded", async () => {
           body: "Форумот е успешно поставен. Креирај нова тема од менито! 😊",
           author: "System",
           authorId: "system",
-          sticky: false,
+          avatarUrl: "",
+          sticky: true,
           locked: false,
+          flagged: false,
           commentCount: 0,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          views: 0,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          lastActivity: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        console.log("✔ initForum: first default thread created");
+        console.log("✔ initForum: default sticky thread created");
       }
 
     } catch (err) {
@@ -59,7 +66,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // =======================================================
-  // 2) Читање steamToken од URL
+  // STEAM TOKEN LOGIN
   // =======================================================
   const urlParams = new URLSearchParams(window.location.search);
   const steamToken = urlParams.get("steamToken");
@@ -83,7 +90,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // =======================================================
-  // 3) Следење на корисник
+  // ФИНАЛЕН AUTH LISTENER
   // =======================================================
   auth.onAuthStateChanged(async user => {
 
@@ -101,26 +108,26 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     console.log("✔ Корисник е најавен:", user.uid);
 
-    // 🔥 Стартувај AUTO INIT
+    // AUTO INIT (само еднаш)
     await initForum();
 
-    // Податоци за корисник
     const userRef = db.collection("users").doc(user.uid);
     const snap = await userRef.get();
     const userData = snap.exists ? snap.data() : {};
 
-    // Бан
+    // BAN CHECK
     if (userData.banned === true) {
-      alert("БАНИРАН СИ ОД САЈТОТ!");
+      alert("⛔ БАНИРАН СИ ОД САЈТОТ!");
       auth.signOut();
       return;
     }
 
-    // UI – име и аватар
+    // UI – username
     document.querySelectorAll("#userName").forEach(el => {
       el.textContent = userData.username || "Играч";
     });
 
+    // UI – avatar
     if (userData.avatarUrl) {
       document.querySelectorAll("#userAvatar, .avatar-big").forEach(el => {
         el.style.backgroundImage = `url(${userData.avatarUrl})`;
@@ -128,7 +135,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     }
 
-    // ADMIN / MOD копчиња
+    // ADMIN / MOD LINKS
     const role = (userData.role || "member").toLowerCase();
     const topLinks = document.querySelector(".top-links");
 
@@ -136,31 +143,33 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!topLinks.querySelector(".admin-btn")) {
 
         if (role === "admin") {
-          topLinks.insertAdjacentHTML("beforeend",
+          topLinks.insertAdjacentHTML(
+            "beforeend",
             `<a href="admin.html" class="admin-btn">Админ Панел</a>`
           );
         }
 
-        topLinks.insertAdjacentHTML("beforeend",
+        topLinks.insertAdjacentHTML(
+          "beforeend",
           `<a href="dashboard.html" class="mod-btn">Мод Панел</a>`
         );
       }
     }
 
-    // Сетирај онлајн статус
+    // ONLINE STATUS
     userRef.set({
       online: true,
       lastSeen: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
-    // Пинг на 30 секунди
+    // KEEP-ALIVE пинг (на секои 30 сек)
     setInterval(() => {
       userRef.update({
         lastSeen: firebase.firestore.FieldValue.serverTimestamp()
       });
     }, 30000);
 
-    // Статистики
+    // Load UI data
     loadStats(db);
     loadLiveMatches(db);
 
@@ -168,8 +177,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 });
 
+
 // =======================================================
-// Статистики
+// Лајв статистики (online, members, threads, comments)
 // =======================================================
 function loadStats(db) {
 
@@ -192,8 +202,9 @@ function loadStats(db) {
   });
 }
 
+
 // =======================================================
-// Live matches
+// Лајв Dota мечеви (играчи кои имаат inGame = true)
 // =======================================================
 async function loadLiveMatches(db) {
   const container = document.getElementById("liveMatches");
@@ -211,22 +222,30 @@ async function loadLiveMatches(db) {
       return;
     }
 
-    let html = "<div style='font-weight:600;color:#22c55e;margin-bottom:10px;'>Активни мечеви:</div>";
+    let html = `
+      <div style='font-weight:600;color:#22c55e;margin-bottom:10px;'>
+        Активни мечеви:
+      </div>
+    `;
 
     snap.forEach(doc => {
       const u = doc.data();
       html += `
-        <div style="margin:6px 0;padding:10px;background:rgba(34,197,94,0.15);
-             border-radius:10px;font-weight:500;">
+        <div style="
+          margin:6px 0;
+          padding:10px;
+          background:rgba(34,197,94,0.15);
+          border-radius:10px;
+          font-weight:500;">
           <strong>${u.username}</strong> е во Dota 2 меч!
-        </div>`;
+        </div>
+      `;
     });
 
     container.innerHTML = html;
 
   } catch (err) {
-    console.error(err);
+    console.error("loadLiveMatches error:", err);
     container.innerHTML = "Грешка при проверка.";
   }
 }
-
