@@ -1,4 +1,4 @@
-// js/thread.js – PREMIUM ВЕРЗИЈА 21.11.2025
+// js/thread.js – PREMIUM ВЕРЗИЈА 21.11.2025 (FIXED + ANTI-SPAM)
 // - Real-time коментари
 // - 👍 Like систем
 // - Quote / Reply
@@ -7,6 +7,7 @@
 // - View counter
 // - Locked / Sticky поддршка
 // - Mod панел (admin / moderator)
+// - Anti-spam hook (SpamGuard.checkComment)
 
 let currentUser = null;
 let currentUserRole = "member";
@@ -297,6 +298,13 @@ async function postComment() {
     return;
   }
 
+  // Anti-spam hook (ако anti-spam.js е вклучен)
+  if (window.SpamGuard && typeof window.SpamGuard.checkComment === "function") {
+    if (!window.SpamGuard.checkComment()) {
+      return;
+    }
+  }
+
   try {
     btn && (btn.disabled = true);
 
@@ -311,7 +319,8 @@ async function postComment() {
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       likedBy: [],
       likesCount: 0,
-      edited: false
+      edited: false,
+      flagged: false
     });
 
     // Инкрементирај глобален бројач на коментари (по желба)
